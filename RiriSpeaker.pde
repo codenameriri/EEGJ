@@ -72,7 +72,7 @@ public void draw()
   strokeWeight(3);
   fill(0);
   ellipse(centerX, centerY, graphWidth, graphHeight);
-  fill(25);
+  fill(30);
   ellipse(centerX, centerY, graphWidth/1.1, graphHeight/1.1);
   // Draw the speaker "core"
   imageMode(CENTER);
