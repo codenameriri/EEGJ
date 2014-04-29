@@ -1,4 +1,8 @@
 import themidibus.*;
+import processing.serial.*;
+import org.firmata.*;
+import cc.arduino.*;
+import java.util.Map;
 
 /*
 *	Instance Vars
@@ -43,6 +47,19 @@ int pitch;
 // Filters
 int highPassFilterVal, lowPassFilterVal;
 
+// MindFlex (Serial)
+int MINDFLEX_PORT = 5;
+int START_PACKET = 3;
+int LEVEL_STEP = 4;
+Serial mindFlex;
+PrintWriter output;
+int packetCount, globalMax;
+
+// DataGen 
+HashMap<String,Integer> inputSettings;
+DataGenerator dummyDataGenerator;
+boolean useDummyData;
+
 /*
 *	Sketch Setup
 */
@@ -81,6 +98,26 @@ void setup() {
 	// Filter setup
 	highPassFilterVal = 0;
 	lowPassFilterVal = 127;
+	// MindFlex setup
+	packetCount = 0;
+	globalMax = 0;
+	println("Serial:");
+	for (int i = 0; i < Serial.list().length; i++) {
+	    println("[" + i + "] " + Serial.list()[i]);
+	}
+	try {
+		mindFlex = new Serial(this, Serial.list()[MINDFLEX_PORT], 9600);
+		mindFlex.bufferUntil(10);
+		String date = day() + "_" + month() + "_" + year();
+  		String time = "" + hour() + minute() + second();
+		output = createWriter("brain_data/brain_data_out_"+date+"_"+time+".txt");
+	}
+	catch (Exception e) {
+		useDummyData = true;
+	}
+	// DataGen setup
+	inputSettings = new HashMap<String,Integer>();
+	useDummyData = false;
 }
 
 /*
@@ -104,6 +141,7 @@ void draw() {
 	text("grain: " + grain, 0, 60);
 	text("pulse: " + pulse, 0, 80);
 	text("bpm: " + bpm, 0, 100);
+	text("useDummyData: " + useDummyData, 0, 120);
 	text("beat: " + beat, WIDTH/2, 20);
 	text("measure: " + measure, WIDTH/2, 40);
 	text("phase: " + phase, WIDTH/2, 60);
@@ -181,10 +219,10 @@ void playMusic() {
 				resetInstruments();
 			}
 			createMeasure();
-			/*if (useDummyData) {
+			if (useDummyData) {
 				String input = dummyDataGenerator.getInput("brainwave");
 				calculateFocusRelaxLevel(input);
-			}*/
+			}
 			beat++;
 		}
 		else {
@@ -551,5 +589,122 @@ void setPhaseKey() {
 	}
 	else {
 		pitch = PITCH_C;
+	}
+}
+
+/*
+*	MindFlex serial event
+*/
+
+void serialEvent(Serial p) {
+	// Read in the data
+	String input;
+	try {
+		input = p.readString().trim();
+		//print("Received string over serial: ");
+		//println(input);
+		output.println(input);
+	}
+	catch (Exception e) {
+		input = dummyDataGenerator.getInput("brainwave");
+		useDummyData = true;
+	}
+	calculateFocusRelaxLevel(input);
+}
+
+void calculateFocusRelaxLevel(String input) {
+	// Parse the data
+	boolean goodRead = false;
+	if (input.indexOf("ERROR:") != -1 || input.length() == 0) {
+		//println("bad");
+		goodRead = false;
+	}
+	else {
+		//println("good");
+		goodRead = true;
+	}
+	if (goodRead) {
+		String[] brainData = input.split(",");
+		int[] intData = new int[brainData.length];
+		if (brainData.length > 8) {
+			packetCount++;
+			if (packetCount > START_PACKET) {
+				for (int i = 0; i < brainData.length; i++) {
+					String strVal = brainData[i].trim();
+					int intVal = Integer.parseInt(strVal);
+					// 0 THE DATA WHEN SIGNAL SUCKS
+					if ((Integer.parseInt(brainData[0]) == 200) && (i > 2)) {
+			          	intVal = 0;
+			        }
+			        intData[i] = intVal;
+				}
+			}
+		}
+
+		// Format the data
+		int min = -1; 
+		int max = -1;
+		for (int i = 3; i < intData.length; i++) {
+			if (max < 0 || intData[i] > max) {
+				max = intData[i];
+				if (max > globalMax) {
+					globalMax = max;
+				}
+			}
+			if (min < 0 || intData[i] < min) {
+				min = intData[i];
+			}
+		}
+		//println("MIN " + min + " MAX " + max);
+
+		int[] tmp = new int[intData.length - 3];
+		for (int i = 3; i < intData.length; i++) {
+			//tmp[i-3] = (int) map(intData[i], min, max, 0, 100);
+			tmp[i-3] = (int) map(intData[i], 0, globalMax, 0, 100);
+		}
+
+		// Interpret the data
+		int focusVal = 0;
+		int relaxVal = 0;
+		float newLevel = 0;
+		for (int i = 1; i < tmp.length; i++) {
+			if (i < tmp.length/2) {
+				relaxVal += tmp[i];
+			}
+			else {
+				focusVal += tmp[i];
+			}
+		}
+		focusVal = (int) (focusVal / 4);
+		relaxVal = (int) (relaxVal / 4);
+
+
+		// Set the brain level
+		newLevel = focusVal - relaxVal;
+		// METHOD 1: Set focusRelaxLevel to the difference of focus and relax
+		// focusRelaxLevel = (int) newLevel;
+		// METHOD 2: Adjust focusRelaxLevel based on a fraction of the difference of focus and relax
+		//focusRelaxLevel += (int) (newLevel / 4);
+		//focusRelaxLevel += (int) newLevel;
+		// METHOD 3: Adjust focusRelaxLevel based on "direction" of mental activity
+		// and adjust by the current grain
+		if (newLevel >= 1) {
+			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+		}
+		else if (newLevel <= -1) {
+			focusRelaxLevel -= (focusRelaxLevel < 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+		}
+		if (focusRelaxLevel > MAX_FOCUS) {
+			focusRelaxLevel = MAX_FOCUS;
+		}
+		else if (focusRelaxLevel < MAX_RELAX) {
+			focusRelaxLevel = MAX_RELAX;
+		}
+		//newLevel = map(focusVal - relaxVal, 0, 100, -100, 100);
+		//println("NEW LEVEL: "+newLevel);
+		println("FOCUS: "+focusVal+", RELAX: "+relaxVal+", NEW LEVEL: "+newLevel);
+	}
+	else {
+		// Do something
 	}
 }
