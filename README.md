@@ -11,13 +11,13 @@ EEGJ was on exhibit at the 2014 Imagine RIT event at the Rochester Institute of 
 
 ### Dependencies
 
-*TheMidiBus: [http://www.smallbutdigital.com/themidibus.php](http://www.smallbutdigital.com/themidibus.php)    
-*RiriFramework: [https://github.com/codenameriri/riri-framework](https://github.com/codenameriri/riri-framework)    
-*DataGen: [https://github.com/tconroy/Data-Gen](https://github.com/tconroy/Data-Gen)    
+* TheMidiBus: [http://www.smallbutdigital.com/themidibus.php](http://www.smallbutdigital.com/themidibus.php)    
+* RiriFramework: [https://github.com/codenameriri/riri-framework](https://github.com/codenameriri/riri-framework)    
+* DataGen: [https://github.com/tconroy/Data-Gen](https://github.com/tconroy/Data-Gen)    
 
 ### Sources
 
-*Processing Reference: [http://processing.org/reference/](http://processing.org/reference/)    
-*Hacking the MindFlex: [http://frontiernerds.com/brain-hack](http://frontiernerds.com/brain-hack)    
-*Virtual MIDI Buses: [https://www.ableton.com/en/articles/using-virtual-MIDI-buses-live/](https://www.ableton.com/en/articles/using-virtual-MIDI-buses-live/)    
-*MIDI Mapping in Ableton: [https://www.ableton.com/en/articles/getting-started-3-setting-your-midi-controller/](https://www.ableton.com/en/articles/getting-started-3-setting-your-midi-controller/)    
+* Processing Reference: [http://processing.org/reference/](http://processing.org/reference/)    
+* Hacking the MindFlex: [http://frontiernerds.com/brain-hack](http://frontiernerds.com/brain-hack)    
+* Virtual MIDI Buses: [https://www.ableton.com/en/articles/using-virtual-MIDI-buses-live/](https://www.ableton.com/en/articles/using-virtual-MIDI-buses-live/)    
+* MIDI Mapping in Ableton: [https://www.ableton.com/en/articles/getting-started-3-setting-your-midi-controller/](https://www.ableton.com/en/articles/getting-started-3-setting-your-midi-controller/)    
