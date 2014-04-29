@@ -12,6 +12,7 @@ import java.util.Map;
 int WIDTH = 3072;
 int HEIGHT = 768;
 boolean playing;
+boolean DEBUG = true;
 
 // MidiBus + instruments
 MidiBus mb;
@@ -68,6 +69,16 @@ PImage relaxGraphBG, focusGraphBG;
 RiriSpeaker relaxSpeaker1, relaxSpeaker2, focusSpeaker1, focusSpeaker2;
 PImage relaxSpeakerBG, focusSpeakerBG;
 
+// Records - Mia
+int RECORD_ARDUINO_PORT = 1;
+int PRESSURE_PORT_1 = 0;
+int PRESSURE_PORT_2 = 2;
+Arduino recordArduino;
+boolean recordArduinoOn;
+RiriRecord relaxRecord, focusRecord;
+float relaxRecordData, focusRecordData;
+color relaxRecordColor, focusRecordColor, recordBackgroundColor;
+
 /*
 *	Sketch Setup
 */
@@ -114,6 +125,9 @@ void setup() {
 	// Filter setup
 	highPassFilterVal = 0;
 	lowPassFilterVal = 127;
+	// DataGen setup
+	inputSettings = new HashMap<String,Integer>();
+	useDummyData = false;
 	// MindFlex setup
 	packetCount = 0;
 	globalMax = 0;
@@ -131,9 +145,6 @@ void setup() {
 	catch (Exception e) {
 		useDummyData = true;
 	}
-	// DataGen setup
-	inputSettings = new HashMap<String,Integer>();
-	useDummyData = false;
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
@@ -146,6 +157,23 @@ void setup() {
   	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 75, 3*(HEIGHT/4) - 200, 350, 350, relaxSpeakerBG);
   	focusSpeaker1 = new RiriSpeaker(120, HEIGHT/4 - 150, 250, 250, focusSpeakerBG);
   	focusSpeaker2 = new RiriSpeaker(75, 3*(HEIGHT/4) - 200, 350, 350, focusSpeakerBG);
+  	// Record setup
+  	relaxRecordData = 0;
+  	focusRecordData = 0;
+	try{
+	    recordArduino = new Arduino(this, Arduino.list()[RECORD_ARDUINO_PORT], 57600); 
+	}
+	catch(Exception e){
+	    recordArduinoOn = false;
+	    // Use data generator
+	    inputSettings.put("pressure", 200);
+	    useDummyData = true;
+	}
+	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, 3*(WIDTH/4), 3*(HEIGHT/4), true);
+	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, WIDTH/4, 3*(HEIGHT/4), false);
+	// Initialize DataGen
+	inputSettings.put("brainwave", 1000);
+    dummyDataGenerator = new DataGenerator(inputSettings);
 }
 
 /*
@@ -175,19 +203,37 @@ void draw() {
   	relaxSpeaker2.draw();
   	focusSpeaker1.draw();
   	focusSpeaker2.draw();
+  	// Records
+	if (recordArduinoOn) {
+	    relaxRecordData = recordArduino.analogRead(PRESSURE_PORT_2);
+	    focusRecordData = recordArduino.analogRead(PRESSURE_PORT_1); 
+	}
+	else {
+	    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
+	    focusRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure"))); 
+	}
+	relaxRecord.dataValue = relaxRecordData;
+ 	focusRecord.dataValue = focusRecordData;
+	relaxRecord.draw();
+	focusRecord.draw();
 	// DEBUG
-	fill(255);
-	text("focusRelaxLevel: " + focusRelaxLevel, 0, 20);
-	text("level: " + level, 0, 40);
-	text("grain: " + grain, 0, 60);
-	text("pulse: " + pulse, 0, 80);
-	text("bpm: " + bpm, 0, 100);
-	text("useDummyData: " + useDummyData, 0, 120);
-	text("beat: " + beat, 200, 20);
-	text("measure: " + measure, 200, 40);
-	text("phase: " + phase, 200, 60);
-	text("highPass: "+highPassFilterVal, 200, 100);
-	text("lowPass: "+lowPassFilterVal, 200, 120);
+	if (DEBUG) {
+		noStroke();
+		fill(0, 0, 0, 125);
+		rect(0, 0, WIDTH/6, HEIGHT/6);
+		fill(255);
+		text("focusRelaxLevel: " + focusRelaxLevel, 0, 20);
+		text("level: " + level, 0, 40);
+		text("grain: " + grain, 0, 60);
+		text("pulse: " + pulse, 0, 80);
+		text("bpm: " + bpm, 0, 100);
+		text("useDummyData: " + useDummyData, 0, 120);
+		text("beat: " + beat, 200, 20);
+		text("measure: " + measure, 200, 40);
+		text("phase: " + phase, 200, 60);
+		text("highPass: "+highPassFilterVal, 200, 100);
+		text("lowPass: "+lowPassFilterVal, 200, 120);
+	}
 }
 
 /*
