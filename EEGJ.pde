@@ -9,7 +9,7 @@ import java.util.Map;
 */
 
 // Sketch props
-int WIDTH = 1024;
+int WIDTH = 3072;
 int HEIGHT = 768;
 boolean playing;
 
@@ -48,27 +48,43 @@ int pitch;
 int highPassFilterVal, lowPassFilterVal;
 
 // MindFlex (Serial)
-int MINDFLEX_PORT = 5;
+int MINDFLEX_PORT = 0;
 int START_PACKET = 3;
 int LEVEL_STEP = 4;
 Serial mindFlex;
 PrintWriter output;
 int packetCount, globalMax;
 
-// DataGen 
+// DataGen - Tom
 HashMap<String,Integer> inputSettings;
 DataGenerator dummyDataGenerator;
 boolean useDummyData;
 
+// Brain Level Graphs - Ben
+RiriGraph relaxGraph, focusGraph;
+PImage relaxGraphBG, focusGraphBG;
+
+// Speakers - Brennan
+RiriSpeaker relaxSpeaker1, relaxSpeaker2, focusSpeaker1, focusSpeaker2;
+PImage relaxSpeakerBG, focusSpeakerBG;
+
 /*
 *	Sketch Setup
 */
+
+void init() {
+  	frame.removeNotify();
+ 	frame.setUndecorated(true);
+  	frame.addNotify();
+  	super.init(); 
+}
 
 void setup() {
 	// Sketch setup
 	size(WIDTH, HEIGHT);
 	background(0);
 	frameRate(60);
+	smooth();
 	playing = false;
 	// MidiBus setup
 	MidiBus.list();
@@ -118,6 +134,18 @@ void setup() {
 	// DataGen setup
 	inputSettings = new HashMap<String,Integer>();
 	useDummyData = false;
+	// Graph setup
+  	relaxGraphBG = loadImage("relax_gradient2.png");
+  	focusGraphBG = loadImage("focus_gradient2.png");
+  	relaxGraph = new RiriGraph(4*(WIDTH/6), 0, WIDTH/6, HEIGHT/2, relaxGraphBG, 0);
+  	focusGraph = new RiriGraph(WIDTH/6, 0, WIDTH/6, HEIGHT/2, focusGraphBG, 1);
+  	// Speaker setup
+  	relaxSpeakerBG = loadImage("relax_radial.png");
+  	focusSpeakerBG = loadImage("focus_radial.png");
+  	relaxSpeaker1 = new RiriSpeaker(WIDTH - 250 - 120, HEIGHT/4 - 150, 250, 250, relaxSpeakerBG);
+  	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 75, 3*(HEIGHT/4) - 200, 350, 350, relaxSpeakerBG);
+  	focusSpeaker1 = new RiriSpeaker(120, HEIGHT/4 - 150, 250, 250, focusSpeakerBG);
+  	focusSpeaker2 = new RiriSpeaker(75, 3*(HEIGHT/4) - 200, 350, 350, focusSpeakerBG);
 }
 
 /*
@@ -125,7 +153,11 @@ void setup() {
 */
 
 void draw() {
+	if (frameCount == 1) {
+	    frame.setLocation(0,0); 
+	}
 	background(0);
+	// Music
 	if (playing) {
 		// Music
 		playMusic();
@@ -135,18 +167,27 @@ void draw() {
     	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
     	lowPassFilterMsg.send();
 	}
+	// Graphs
+  	relaxGraph.draw();
+  	focusGraph.draw();
+  	// Speakers
+  	relaxSpeaker1.draw();
+  	relaxSpeaker2.draw();
+  	focusSpeaker1.draw();
+  	focusSpeaker2.draw();
 	// DEBUG
+	fill(255);
 	text("focusRelaxLevel: " + focusRelaxLevel, 0, 20);
 	text("level: " + level, 0, 40);
 	text("grain: " + grain, 0, 60);
 	text("pulse: " + pulse, 0, 80);
 	text("bpm: " + bpm, 0, 100);
 	text("useDummyData: " + useDummyData, 0, 120);
-	text("beat: " + beat, WIDTH/2, 20);
-	text("measure: " + measure, WIDTH/2, 40);
-	text("phase: " + phase, WIDTH/2, 60);
-	text("highPass: "+highPassFilterVal, WIDTH/2, 100);
-	text("lowPass: "+lowPassFilterVal, WIDTH/2, 120);
+	text("beat: " + beat, 200, 20);
+	text("measure: " + measure, 200, 40);
+	text("phase: " + phase, 200, 60);
+	text("highPass: "+highPassFilterVal, 200, 100);
+	text("lowPass: "+lowPassFilterVal, 200, 120);
 }
 
 /*
@@ -186,9 +227,21 @@ void playMusic() {
 	// Beat Change
 	if (mils > lastMils + beatsToNanos(1)/1000 - delay) {
 		int milsA = mils;
-		//println("\tA: "+milsA);
+		// Update values
 		updateLevelHistory();
 		updateBpmHistory();
+		// Update graphs and speakers
+		if (level <= 0) {
+			relaxGraph.setMarkerX((int) map(level, 0, -100, 0, relaxGraph.graphWidth));
+			relaxSpeaker1.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker1.graphWidth/1.1));
+			relaxSpeaker2.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker2.graphWidth/1.1));
+		}
+		else if (level >= 0) {
+			focusGraph.setMarkerX((int) map(level, 0, 100, 0, focusGraph.graphWidth));
+			focusSpeaker1.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker1.graphWidth/1.1));
+			focusSpeaker2.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker2.graphWidth/1.1));
+		}
+		// Update speakers
 		if (beat == BEATS_PER_MEASURE) {
 			beat = 1;
 			// Measure Change
@@ -197,6 +250,7 @@ void playMusic() {
 				if (phase == PHASES_PER_SONG) {
 					// We're done!
 					stopMusic();
+					playing = false;
 				}
 				else {
 					phase++;
@@ -642,6 +696,8 @@ void calculateFocusRelaxLevel(String input) {
 		}
 
 		// Format the data
+		int connection = intData[0];
+		println("CONNECTION: "+connection);
 		int min = -1; 
 		int max = -1;
 		for (int i = 3; i < intData.length; i++) {
@@ -676,7 +732,7 @@ void calculateFocusRelaxLevel(String input) {
 			}
 		}
 		focusVal = (int) (focusVal / 4);
-		relaxVal = (int) (relaxVal / 4);
+		relaxVal = (int) (relaxVal / 3);
 
 
 		// Set the brain level
@@ -688,7 +744,7 @@ void calculateFocusRelaxLevel(String input) {
 		//focusRelaxLevel += (int) newLevel;
 		// METHOD 3: Adjust focusRelaxLevel based on "direction" of mental activity
 		// and adjust by the current grain
-		if (newLevel >= 1) {
+		if (newLevel >= 0) {
 			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
 		}
 		else if (newLevel <= -1) {
