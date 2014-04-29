@@ -48,7 +48,7 @@ int pitch;
 int highPassFilterVal, lowPassFilterVal;
 
 // MindFlex (Serial)
-int MINDFLEX_PORT = 5;
+int MINDFLEX_PORT = 0;
 int START_PACKET = 3;
 int LEVEL_STEP = 4;
 Serial mindFlex;
@@ -642,6 +642,8 @@ void calculateFocusRelaxLevel(String input) {
 		}
 
 		// Format the data
+		int connection = intData[0];
+		println("CONNECTION: "+connection);
 		int min = -1; 
 		int max = -1;
 		for (int i = 3; i < intData.length; i++) {
@@ -676,7 +678,7 @@ void calculateFocusRelaxLevel(String input) {
 			}
 		}
 		focusVal = (int) (focusVal / 4);
-		relaxVal = (int) (relaxVal / 4);
+		relaxVal = (int) (relaxVal / 3);
 
 
 		// Set the brain level
@@ -688,7 +690,7 @@ void calculateFocusRelaxLevel(String input) {
 		//focusRelaxLevel += (int) newLevel;
 		// METHOD 3: Adjust focusRelaxLevel based on "direction" of mental activity
 		// and adjust by the current grain
-		if (newLevel >= 1) {
+		if (newLevel >= 0) {
 			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
 		}
 		else if (newLevel <= -1) {
