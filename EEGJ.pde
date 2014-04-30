@@ -86,8 +86,9 @@ int KNOB_Y = 650;
 PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white, knobtrack_dark;
 PShape brain, dot_green, dot_dark, jellybean_dark, jellybean_pink;
 PImage knob_yellow_image;
-Widget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2, focusKnob3, focusKnob4;
-Widget grainKnob, brainGood, brainBad, brainWidget;
+SVGWidget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2, focusKnob3, focusKnob4;
+SVGWidget brainGood, brainBad, brainWidget;
+ImageWidget grainKnob;
 
 /*
 *	Sketch Setup
@@ -187,14 +188,9 @@ void setup() {
 	inputSettings.put("brainwave", 1000);
     dummyDataGenerator = new DataGenerator(inputSettings);
     // Widgets
-    // PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white;
-	// PShape brain, dot_green, dot_dark, jellybean_dark, jellybean_pink;
-	// PImage knob_yellow_image;
-	// Widget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2, focusKnob3, focusKnob4;
-	// Widget grainKnob, brainGood, brainBad, brainWidget;
 	knobtrack_white = loadShape("knobtrack_white.svg");
 	knobtrack_dark = loadShape("knobtrack_dark.svg");
-	knob_yellow_image = loadImage("knob_yellow.png");
+	knob_yellow_image = loadImage("knob_yellow2.png");
 	knob_blue = loadShape("knob_blue.svg");
 	knob_green = loadShape("knob_green.svg");
 	knob_orange = loadShape("knob_orange.svg");
@@ -212,7 +208,7 @@ void setup() {
 	focusKnob2 = new SVGWidget(11*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_pink);
 	focusKnob3 = new SVGWidget(12*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
 	focusKnob4 = new SVGWidget(13*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
-	grainKnob = new ImageWidget(14*(WIDTH/30) + 10, KNOB_Y + 20, KNOB_SIZE - 40, KNOB_SIZE - 40, knob_yellow_image);
+	grainKnob = new ImageWidget(14*(WIDTH/30) + 5, KNOB_Y + 20, KNOB_SIZE - 30, KNOB_SIZE - 30, knob_yellow_image);
 	brainWidget = new SVGWidget(15*(WIDTH/30) + 15, KNOB_Y, KNOB_SIZE, KNOB_SIZE, brain);
 	brainGood = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y - KNOB_SIZE/5, KNOB_SIZE, KNOB_SIZE, dot_green);
 	brainBad = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y + KNOB_SIZE/8, KNOB_SIZE, KNOB_SIZE, jellybean_dark);
@@ -273,10 +269,17 @@ void draw() {
 	focusKnob2.draw();
 	focusKnob3.draw();
 	focusKnob4.draw();
-	// grainKnob = new ImageWidget(14*(WIDTH/30), KNOB_Y + 20, KNOB_SIZE - 40, KNOB_SIZE - 40, knob_yellow_image);
 	shape(knobtrack_white, 14*(WIDTH/30) - 20, KNOB_Y - 5, KNOB_SIZE + 20, KNOB_SIZE + 20);
 	grainKnob.draw();
 	brainWidget.draw();
+	if (useDummyData) {
+		brainGood.setShape(dot_dark);
+		brainBad.setShape(jellybean_pink);
+	}
+	else {
+		brainGood.setShape(dot_green);
+		brainBad.setShape(jellybean_dark);
+	}
 	brainGood.draw();
 	brainBad.draw();
 
@@ -762,6 +765,7 @@ void setMeasureLevelAndGrain() {
 	else {
 		grain = 0; // Iunno
 	}
+	grainKnob.rotation((int) map(grain, 0, 3, -90, 90));
 }
 
 void setPhaseKey() {
