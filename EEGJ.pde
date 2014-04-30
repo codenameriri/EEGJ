@@ -844,13 +844,30 @@ void calculateFocusRelaxLevel(String input) {
 		}
 		//println("MIN " + min + " MAX " + max);
 
+		// Rotate the knobs
+		/*relaxKnob1.rotation((int) map(intData[3], min, max, -90, 90));
+		relaxKnob2.rotation((int) map(intData[4], min, max, -90, 90));
+		relaxKnob3.rotation((int) map(intData[5], min, max, -90, 90));
+		relaxKnob4.rotation((int) map(intData[6], min, max, -90, 90));
+		focusKnob4.rotation((int) map(intData[7], min, max, -90, 90));
+		focusKnob3.rotation((int) map(intData[8], min, max, -90, 90));
+		focusKnob2.rotation((int) map(intData[9], min, max, -90, 90));
+		focusKnob1.rotation((int) map(intData[10], min, max, -90, 90));*/
+		relaxKnob1.rotation((int) map(intData[3], 0, globalMax, -90, 90));
+		relaxKnob2.rotation((int) map(intData[4], 0, globalMax, -90, 90));
+		relaxKnob3.rotation((int) map(intData[5], 0, globalMax, -90, 90));
+		relaxKnob4.rotation((int) map(intData[6], 0, globalMax, -90, 90));
+		focusKnob4.rotation((int) map(intData[7], 0, globalMax, -90, 90));
+		focusKnob3.rotation((int) map(intData[8], 0, globalMax, -90, 90));
+		focusKnob2.rotation((int) map(intData[9], 0, globalMax, -90, 90));
+		focusKnob1.rotation((int) map(intData[10], 0, globalMax, -90, 90));
+
+		// Interpret the data
 		int[] tmp = new int[intData.length - 3];
 		for (int i = 3; i < intData.length; i++) {
 			//tmp[i-3] = (int) map(intData[i], min, max, 0, 100);
 			tmp[i-3] = (int) map(intData[i], 0, globalMax, 0, 100);
 		}
-
-		// Interpret the data
 		int focusVal = 0;
 		int relaxVal = 0;
 		float newLevel = 0;
