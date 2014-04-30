@@ -325,6 +325,22 @@ void draw() {
 *	Music Playing
 */
 
+void startEEGJ() {
+	playing = true;
+	RiriMessage msg = new RiriMessage(176, 0, 104, 127);
+    msg.send();
+	setupMusic();
+	startMusic();
+}
+
+void stopEEGJ() {
+	stopMusic();
+	//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
+	RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
+    msg.send();
+	playing = false;
+}
+
 void setupMusic() {
 	// Reset song position
 	beat = 0;
@@ -339,8 +355,6 @@ void setupMusic() {
 	createRestMeasure(bass);
 	createRestMeasure(synth1);
 	createRestMeasure(synth2);
-	// Start all instruments
-	startMusic();
 }
 
 void startMusic() {
@@ -380,8 +394,7 @@ void playMusic() {
 				measure = 1;
 				if (phase == PHASES_PER_SONG) {
 					// We're done!
-					stopMusic();
-					playing = false;
+					stopEEGJ();
 				}
 				else {
 					phase++;
@@ -631,9 +644,8 @@ void createSynth2Measure() { // Pad
 void keyPressed() {
 	// Play/stop
 	if (key == ' ') {
-		playing = !playing;
-		if (playing) setupMusic();
-		else stopMusic();
+		if (!playing) startEEGJ();
+		else stopEEGJ();
 	}
 	// Focus/relax
 	if (keyCode == LEFT) {
@@ -666,13 +678,21 @@ void keyPressed() {
 		lowPassFilterVal -= 5;
 		if (lowPassFilterVal < 0) lowPassFilterVal = 0;
 	}
-	// Filter setup
-	if (key == 'z') {
+	// MIDI control setup
+	if (key == 'z') { //  High Pass
 		RiriMessage msg = new RiriMessage(176, 0, 102, 0);
     	msg.send();
 	}
-	if (key == 'x') {
+	if (key == 'x') { // Low Pass
 		RiriMessage msg = new RiriMessage(176, 0, 103, 127);
+    	msg.send();
+	}
+	if (key == 'c') { // Record
+		RiriMessage msg = new RiriMessage(176, 0, 104, 0);
+    	msg.send();
+	}
+	if (key == 'v') { // Stop
+		RiriMessage msg = new RiriMessage(176, 0, 105, 0); 
     	msg.send();
 	}
 	// DEBUG
