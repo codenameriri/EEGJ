@@ -50,7 +50,8 @@ int pitch;
 int highPassFilterVal, lowPassFilterVal;
 
 // MindFlex (Serial)
-int MINDFLEX_PORT = 5;
+//int MINDFLEX_PORT = 0;
+String MINDFLEX_PORT = "COM4";
 int START_PACKET = 3;
 int LEVEL_STEP = 4;
 Serial mindFlex;
@@ -71,9 +72,10 @@ RiriSpeaker relaxSpeaker1, relaxSpeaker2, focusSpeaker1, focusSpeaker2;
 PImage relaxSpeakerBG, focusSpeakerBG;
 
 // Records - Mia
-int RECORD_ARDUINO_PORT = 1;
-int PRESSURE_PORT_1 = 0;
-int PRESSURE_PORT_2 = 2;
+//int RECORD_ARDUINO_PORT = 1;
+String RECORD_ARDUINO_PORT = "COM5";
+int RELAX_RECORD_PIN = 0;
+int FOCUS_RECORD_PIN = 2;
 Arduino recordArduino;
 boolean recordArduinoOn;
 RiriRecord relaxRecord, focusRecord;
@@ -149,13 +151,15 @@ void setup() {
 	    println("[" + i + "] " + Serial.list()[i]);
 	}
 	try {
-		mindFlex = new Serial(this, Serial.list()[MINDFLEX_PORT], 9600);
+		//mindFlex = new Serial(this, Serial.list()[MINDFLEX_PORT], 9600);
+		mindFlex = new Serial(this, MINDFLEX_PORT, 9600);
 		mindFlex.bufferUntil(10);
 		String date = day() + "_" + month() + "_" + year();
   		String time = "" + hour() + minute() + second();
 		output = createWriter("brain_data/brain_data_out_"+date+"_"+time+".txt");
 	}
 	catch (Exception e) {
+		println("MindFlex Serial Exception: " + e.getMessage());
 		useDummyData = true;
 	}
 	// Graph setup
@@ -174,18 +178,20 @@ void setup() {
   	relaxRecordData = 0;
   	focusRecordData = 0;
 	try{
-	    recordArduino = new Arduino(this, Arduino.list()[RECORD_ARDUINO_PORT], 57600); 
+		recordArduinoOn = true;
+	    //recordArduino = new Arduino(this, Arduino.list()[RECORD_ARDUINO_PORT], 57600); 
+	    recordArduino = new Arduino(this, RECORD_ARDUINO_PORT, 57600); 
 	}
 	catch(Exception e){
+		println("Sensor Arduino Exception: "+e.getMessage());
 	    recordArduinoOn = false;
-	    // Use data generator
-	    inputSettings.put("pressure", 200);
-	    useDummyData = true;
+	    //useDummyData = true;
 	}
-	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, 3*(WIDTH/4), 3*(HEIGHT/4), true);
-	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, WIDTH/4, 3*(HEIGHT/4), false);
+	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, 3*(WIDTH/4) + 25, 3*(HEIGHT/4), true);
+	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, WIDTH/4 - 25, 3*(HEIGHT/4), false);
 	// Initialize DataGen
 	inputSettings.put("brainwave", 1000);
+	inputSettings.put("pressure", 200);
     dummyDataGenerator = new DataGenerator(inputSettings);
     // Widgets
 	knobtrack_white = loadShape("knobtrack_white.svg");
@@ -228,6 +234,10 @@ void draw() {
 		// Music
 		playMusic();
 		// Filters
+		if (recordArduinoOn) {
+			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 127, 0);
+			lowPassFilterVal = (int) map(focusRecordData, 0, 1023, 127, 0); 
+		}
 		RiriMessage highPassFilterMsg = new RiriMessage(176, 0, 102, highPassFilterVal);
     	highPassFilterMsg.send();
     	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
@@ -243,8 +253,8 @@ void draw() {
   	focusSpeaker2.draw();
   	// Records
 	if (recordArduinoOn) {
-	    relaxRecordData = recordArduino.analogRead(PRESSURE_PORT_2);
-	    focusRecordData = recordArduino.analogRead(PRESSURE_PORT_1); 
+	    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
+	    focusRecordData = recordArduino.analogRead(FOCUS_RECORD_PIN); 
 	}
 	else {
 	    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
@@ -287,7 +297,7 @@ void draw() {
 	if (DEBUG) {
 		noStroke();
 		fill(0, 0, 0, 125);
-		rect(0, 0, WIDTH/6, HEIGHT/6);
+		rect(0, 0, WIDTH/6, HEIGHT/5);
 		fill(255);
 		text("focusRelaxLevel: " + focusRelaxLevel, 0, 20);
 		text("level: " + level, 0, 40);
@@ -295,6 +305,7 @@ void draw() {
 		text("pulse: " + pulse, 0, 80);
 		text("bpm: " + bpm, 0, 100);
 		text("useDummyData: " + useDummyData, 0, 120);
+		text("recordArduinoOn: " + recordArduinoOn, 0, 140);
 		text("beat: " + beat, 200, 20);
 		text("measure: " + measure, 200, 40);
 		text("phase: " + phase, 200, 60);
