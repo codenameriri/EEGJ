@@ -54,6 +54,8 @@ class RiriGraph {
 	}
 	
 	public void draw() {
+		rectMode(CORNER);
+		imageMode(CORNER);
 		fill(0,0,0);
 		noStroke();
 		rect(xPos, yPos, graphWidth, graphHeight);

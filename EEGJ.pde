@@ -28,7 +28,8 @@ int MAX_BPM = 100;
 int MIN_BPM = 50;
 int pulse, bpm, grain;
 int focusRelaxLevel, level;
-IntList pulseHist, levelHist;
+//IntList pulseHist, levelHist;
+IntList levelHist;
 
 // Timekeeping
 int BEATS_PER_MEASURE = 4;
@@ -49,7 +50,7 @@ int pitch;
 int highPassFilterVal, lowPassFilterVal;
 
 // MindFlex (Serial)
-int MINDFLEX_PORT = 0;
+int MINDFLEX_PORT = 5;
 int START_PACKET = 3;
 int LEVEL_STEP = 4;
 Serial mindFlex;
@@ -79,15 +80,27 @@ RiriRecord relaxRecord, focusRecord;
 float relaxRecordData, focusRecordData;
 color relaxRecordColor, focusRecordColor, recordBackgroundColor;
 
+// Widgets - Brennan
+int KNOB_SIZE = 120;
+int KNOB_Y = 650;
+PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white, knobtrack_dark;
+PShape brain, dot_green, dot_dark, jellybean_dark, jellybean_pink;
+PImage knob_yellow_image;
+SVGWidget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2, focusKnob3, focusKnob4;
+SVGWidget brainGood, brainBad, brainWidget;
+ImageWidget grainKnob;
+
 /*
 *	Sketch Setup
 */
 
 void init() {
-  	frame.removeNotify();
- 	frame.setUndecorated(true);
-  	frame.addNotify();
-  	super.init(); 
+	if (DEBUG != true) {
+	  	frame.removeNotify();
+	 	frame.setUndecorated(true);
+	  	frame.addNotify();
+	}
+	super.init(); 
 }
 
 void setup() {
@@ -110,7 +123,7 @@ void setup() {
 	// Data setup
 	pulse = 80;
 	bpm = pulse;
-	pulseHist = new IntList();
+	//pulseHist = new IntList();
 	focusRelaxLevel = 0;
 	level = 0;
 	levelHist = new IntList();
@@ -174,6 +187,31 @@ void setup() {
 	// Initialize DataGen
 	inputSettings.put("brainwave", 1000);
     dummyDataGenerator = new DataGenerator(inputSettings);
+    // Widgets
+	knobtrack_white = loadShape("knobtrack_white.svg");
+	knobtrack_dark = loadShape("knobtrack_dark.svg");
+	knob_yellow_image = loadImage("knob_yellow2.png");
+	knob_blue = loadShape("knob_blue.svg");
+	knob_green = loadShape("knob_green.svg");
+	knob_orange = loadShape("knob_orange.svg");
+	knob_pink = loadShape("knob_pink.svg");
+	brain = loadShape("brain.svg");
+	dot_green = loadShape("dot_green.svg");
+	dot_dark = loadShape("dot_dark.svg");
+	jellybean_pink = loadShape("jellybean_pink.svg");
+	jellybean_dark = loadShape("jellybean_dark.svg");
+	relaxKnob1 = new SVGWidget(16*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_green);
+	relaxKnob2 = new SVGWidget(17*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_green);
+	relaxKnob3 = new SVGWidget(18*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_blue);
+	relaxKnob4 = new SVGWidget(19*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_blue);
+	focusKnob1 = new SVGWidget(10*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_pink);
+	focusKnob2 = new SVGWidget(11*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_pink);
+	focusKnob3 = new SVGWidget(12*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
+	focusKnob4 = new SVGWidget(13*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
+	grainKnob = new ImageWidget(14*(WIDTH/30) + 5, KNOB_Y + 20, KNOB_SIZE - 30, KNOB_SIZE - 30, knob_yellow_image);
+	brainWidget = new SVGWidget(15*(WIDTH/30) + 15, KNOB_Y, KNOB_SIZE, KNOB_SIZE, brain);
+	brainGood = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y - KNOB_SIZE/5, KNOB_SIZE, KNOB_SIZE, dot_green);
+	brainBad = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y + KNOB_SIZE/8, KNOB_SIZE, KNOB_SIZE, jellybean_dark);
 }
 
 /*
@@ -181,7 +219,7 @@ void setup() {
 */
 
 void draw() {
-	if (frameCount == 1) {
+	if (frameCount == 1 && DEBUG != true) {
 	    frame.setLocation(0,0); 
 	}
 	background(0);
@@ -216,6 +254,35 @@ void draw() {
  	focusRecord.dataValue = focusRecordData;
 	relaxRecord.draw();
 	focusRecord.draw();
+	// Widgets
+	for (int i = 0; i < 4; i++) {
+		shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
+	}
+	relaxKnob1.draw();
+	relaxKnob2.draw();
+	relaxKnob3.draw();
+	relaxKnob4.draw();
+	for (int i = 0; i < 4; i++) {
+		shape(knobtrack_dark, (10+i)*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
+	}
+	focusKnob1.draw();
+	focusKnob2.draw();
+	focusKnob3.draw();
+	focusKnob4.draw();
+	shape(knobtrack_white, 14*(WIDTH/30) - 20, KNOB_Y - 5, KNOB_SIZE + 20, KNOB_SIZE + 20);
+	grainKnob.draw();
+	brainWidget.draw();
+	if (useDummyData) {
+		brainGood.setShape(dot_dark);
+		brainBad.setShape(jellybean_pink);
+	}
+	else {
+		brainGood.setShape(dot_green);
+		brainBad.setShape(jellybean_dark);
+	}
+	brainGood.draw();
+	brainBad.draw();
+
 	// DEBUG
 	if (DEBUG) {
 		noStroke();
@@ -233,6 +300,13 @@ void draw() {
 		text("phase: " + phase, 200, 60);
 		text("highPass: "+highPassFilterVal, 200, 100);
 		text("lowPass: "+lowPassFilterVal, 200, 120);
+		noFill();
+		stroke(255, 0, 0);
+		strokeWeight(3);
+		rect(0, 0, WIDTH/3, HEIGHT);
+		rect(WIDTH/3, 0, WIDTH/3, HEIGHT);
+		rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
+		noStroke();
 	}
 }
 
@@ -275,7 +349,7 @@ void playMusic() {
 		int milsA = mils;
 		// Update values
 		updateLevelHistory();
-		updateBpmHistory();
+		//updateBpmHistory();
 		// Update graphs and speakers
 		if (level <= 0) {
 			relaxGraph.setMarkerX((int) map(level, 0, -100, 0, relaxGraph.graphWidth));
@@ -634,6 +708,7 @@ void updateLevelHistory() {
 	levelHist.append(focusRelaxLevel);
 }
 
+/*
 void updateBpmHistory() {
 	if (pulseHist.size() == 4) {
 		pulseHist.remove(0);
@@ -649,6 +724,19 @@ void setMeasureBPM() {
 	}
 	val = val/pulseHist.size();
 	bpm = (int) val;
+}
+*/
+
+void setMeasureBPM() {
+	if (level < -20) {
+		bpm = (int) map(level, -20, -100, 80, 65);
+	}
+	else if (level > 20) {
+		bpm = (int) map(level, 20, 100, 80, 95);
+	}
+	else {
+		bpm = 80;
+	}
 }
 
 void setMeasureLevelAndGrain() {
@@ -677,6 +765,7 @@ void setMeasureLevelAndGrain() {
 	else {
 		grain = 0; // Iunno
 	}
+	grainKnob.rotation((int) map(grain, 0, 3, -90, 90));
 }
 
 void setPhaseKey() {
@@ -759,13 +848,30 @@ void calculateFocusRelaxLevel(String input) {
 		}
 		//println("MIN " + min + " MAX " + max);
 
+		// Rotate the knobs
+		/*relaxKnob1.rotation((int) map(intData[3], min, max, -90, 90));
+		relaxKnob2.rotation((int) map(intData[4], min, max, -90, 90));
+		relaxKnob3.rotation((int) map(intData[5], min, max, -90, 90));
+		relaxKnob4.rotation((int) map(intData[6], min, max, -90, 90));
+		focusKnob4.rotation((int) map(intData[7], min, max, -90, 90));
+		focusKnob3.rotation((int) map(intData[8], min, max, -90, 90));
+		focusKnob2.rotation((int) map(intData[9], min, max, -90, 90));
+		focusKnob1.rotation((int) map(intData[10], min, max, -90, 90));*/
+		relaxKnob1.rotation((int) map(intData[3], 0, globalMax, -90, 90));
+		relaxKnob2.rotation((int) map(intData[4], 0, globalMax, -90, 90));
+		relaxKnob3.rotation((int) map(intData[5], 0, globalMax, -90, 90));
+		relaxKnob4.rotation((int) map(intData[6], 0, globalMax, -90, 90));
+		focusKnob4.rotation((int) map(intData[7], 0, globalMax, -90, 90));
+		focusKnob3.rotation((int) map(intData[8], 0, globalMax, -90, 90));
+		focusKnob2.rotation((int) map(intData[9], 0, globalMax, -90, 90));
+		focusKnob1.rotation((int) map(intData[10], 0, globalMax, -90, 90));
+
+		// Interpret the data
 		int[] tmp = new int[intData.length - 3];
 		for (int i = 3; i < intData.length; i++) {
 			//tmp[i-3] = (int) map(intData[i], min, max, 0, 100);
 			tmp[i-3] = (int) map(intData[i], 0, globalMax, 0, 100);
 		}
-
-		// Interpret the data
 		int focusVal = 0;
 		int relaxVal = 0;
 		float newLevel = 0;
