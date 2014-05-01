@@ -2,6 +2,7 @@ import themidibus.*;
 import processing.serial.*;
 import org.firmata.*;
 import cc.arduino.*;
+import de.looksgood.ani.*;
 import java.util.Map;
 
 /*
@@ -11,6 +12,7 @@ import java.util.Map;
 // Sketch props
 int WIDTH = 3072;
 int HEIGHT = 768;
+int WIDGET_HEIGHT = 40;
 boolean playing;
 boolean DEBUG = true;
 
@@ -35,7 +37,7 @@ IntList levelHist;
 int BEATS_PER_MEASURE = 4;
 int MEASURES_PER_PHASE = 8;
 int PHASES_PER_SONG = 4;
-int DELAY_THRESHOLD = 20;
+int DELAY_THRESHOLD = 100;
 int beat, measure, phase, mils, lastMils, delay;
 
 // Music + scales
@@ -83,6 +85,7 @@ float relaxRecordData, focusRecordData;
 color relaxRecordColor, focusRecordColor, recordBackgroundColor;
 
 // Widgets - Brennan
+String WIDGET_DIR = "widgets/";
 int KNOB_SIZE = 120;
 int KNOB_Y = 650;
 PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white, knobtrack_dark;
@@ -91,6 +94,9 @@ PImage knob_yellow_image;
 SVGWidget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2, focusKnob3, focusKnob4;
 SVGWidget brainGood, brainBad, brainWidget;
 ImageWidget grainKnob;
+
+// Stage - Tom
+ScrollingStage myStage;
 
 /*
 *	Sketch Setup
@@ -111,6 +117,7 @@ void setup() {
 	background(0);
 	frameRate(60);
 	smooth();
+	Ani.init(this);
 	playing = false;
 	// MidiBus setup
 	MidiBus.list();
@@ -162,6 +169,8 @@ void setup() {
 		println("MindFlex Serial Exception: " + e.getMessage());
 		useDummyData = true;
 	}
+	// Stage
+	myStage = new ScrollingStage(WIDTH/2, KNOB_Y/2, WIDTH/3, HEIGHT);
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
@@ -194,18 +203,18 @@ void setup() {
 	inputSettings.put("pressure", 200);
     dummyDataGenerator = new DataGenerator(inputSettings);
     // Widgets
-	knobtrack_white = loadShape("knobtrack_white.svg");
-	knobtrack_dark = loadShape("knobtrack_dark.svg");
-	knob_yellow_image = loadImage("knob_yellow2.png");
-	knob_blue = loadShape("knob_blue.svg");
-	knob_green = loadShape("knob_green.svg");
-	knob_orange = loadShape("knob_orange.svg");
-	knob_pink = loadShape("knob_pink.svg");
-	brain = loadShape("brain.svg");
-	dot_green = loadShape("dot_green.svg");
-	dot_dark = loadShape("dot_dark.svg");
-	jellybean_pink = loadShape("jellybean_pink.svg");
-	jellybean_dark = loadShape("jellybean_dark.svg");
+	knobtrack_white = loadShape(WIDGET_DIR+"knobtrack_white.svg");
+	knobtrack_dark = loadShape(WIDGET_DIR+"knobtrack_dark.svg");
+	knob_yellow_image = loadImage(WIDGET_DIR+"knob_yellow2.png");
+	knob_blue = loadShape(WIDGET_DIR+"knob_blue.svg");
+	knob_green = loadShape(WIDGET_DIR+"knob_green.svg");
+	knob_orange = loadShape(WIDGET_DIR+"knob_orange.svg");
+	knob_pink = loadShape(WIDGET_DIR+"knob_pink.svg");
+	brain = loadShape(WIDGET_DIR+"brain.svg");
+	dot_green = loadShape(WIDGET_DIR+"dot_green.svg");
+	dot_dark = loadShape(WIDGET_DIR+"dot_dark.svg");
+	jellybean_pink = loadShape(WIDGET_DIR+"jellybean_pink.svg");
+	jellybean_dark = loadShape(WIDGET_DIR+"jellybean_dark.svg");
 	relaxKnob1 = new SVGWidget(16*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_green);
 	relaxKnob2 = new SVGWidget(17*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_green);
 	relaxKnob3 = new SVGWidget(18*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_blue);
@@ -215,6 +224,15 @@ void setup() {
 	focusKnob3 = new SVGWidget(12*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
 	focusKnob4 = new SVGWidget(13*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE, knob_orange);
 	grainKnob = new ImageWidget(14*(WIDTH/30) + 5, KNOB_Y + 20, KNOB_SIZE - 30, KNOB_SIZE - 30, knob_yellow_image);
+	relaxKnob1.rotation(-90);
+	relaxKnob2.rotation(-90);
+	relaxKnob3.rotation(-90);
+	relaxKnob4.rotation(-90);
+	focusKnob1.rotation(-90);
+	focusKnob2.rotation(-90);
+	focusKnob3.rotation(-90);
+	focusKnob4.rotation(-90);
+	grainKnob.rotation(-90);
 	brainWidget = new SVGWidget(15*(WIDTH/30) + 15, KNOB_Y, KNOB_SIZE, KNOB_SIZE, brain);
 	brainGood = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y - KNOB_SIZE/5, KNOB_SIZE, KNOB_SIZE, dot_green);
 	brainBad = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y + KNOB_SIZE/8, KNOB_SIZE, KNOB_SIZE, jellybean_dark);
@@ -243,58 +261,70 @@ void draw() {
     	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
     	lowPassFilterMsg.send();
 	}
-	// Graphs
-  	relaxGraph.draw();
-  	focusGraph.draw();
-  	// Speakers
-  	relaxSpeaker1.draw();
-  	relaxSpeaker2.draw();
-  	focusSpeaker1.draw();
-  	focusSpeaker2.draw();
-  	// Records
-	if (recordArduinoOn) {
-	    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
-	    focusRecordData = recordArduino.analogRead(FOCUS_RECORD_PIN); 
-	}
-	else {
-	    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
-	    focusRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure"))); 
-	}
-	relaxRecord.dataValue = relaxRecordData;
- 	focusRecord.dataValue = focusRecordData;
-	relaxRecord.draw();
-	focusRecord.draw();
-	// Widgets
-	for (int i = 0; i < 4; i++) {
-		shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
-	}
-	relaxKnob1.draw();
-	relaxKnob2.draw();
-	relaxKnob3.draw();
-	relaxKnob4.draw();
-	for (int i = 0; i < 4; i++) {
-		shape(knobtrack_dark, (10+i)*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
-	}
-	focusKnob1.draw();
-	focusKnob2.draw();
-	focusKnob3.draw();
-	focusKnob4.draw();
-	shape(knobtrack_white, 14*(WIDTH/30) - 20, KNOB_Y - 5, KNOB_SIZE + 20, KNOB_SIZE + 20);
-	grainKnob.draw();
-	brainWidget.draw();
-	if (useDummyData) {
-		brainGood.setShape(dot_dark);
-		brainBad.setShape(jellybean_pink);
-	}
-	else {
-		brainGood.setShape(dot_green);
-		brainBad.setShape(jellybean_dark);
-	}
-	brainGood.draw();
-	brainBad.draw();
-
+	// Stage
+	myStage.update();
+  	myStage.draw();
+  	if (!DEBUG) {
+	  	fill(0);
+	  	noStroke();
+	  	rect(0, 0, WIDTH/3, HEIGHT);
+	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
+  	}
+  	if (myStage.doneLoading) {
+  		// Graphs
+	  	relaxGraph.draw();
+	  	focusGraph.draw();
+	  	// Speakers
+	  	relaxSpeaker1.draw();
+	  	relaxSpeaker2.draw();
+	  	focusSpeaker1.draw();
+	  	focusSpeaker2.draw();
+	  	// Records
+		if (recordArduinoOn) {
+		    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
+		    focusRecordData = recordArduino.analogRead(FOCUS_RECORD_PIN); 
+		}
+		else {
+		    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
+		    focusRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure"))); 
+		}
+		relaxRecord.dataValue = relaxRecordData;
+	 	focusRecord.dataValue = focusRecordData;
+		relaxRecord.draw();
+		focusRecord.draw();
+		// Widgets
+		for (int i = 0; i < 4; i++) {
+			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
+		}
+		relaxKnob1.draw();
+		relaxKnob2.draw();
+		relaxKnob3.draw();
+		relaxKnob4.draw();
+		for (int i = 0; i < 4; i++) {
+			shape(knobtrack_dark, (10+i)*(WIDTH/30) - 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
+		}
+		focusKnob1.draw();
+		focusKnob2.draw();
+		focusKnob3.draw();
+		focusKnob4.draw();
+		shape(knobtrack_white, 14*(WIDTH/30) - 20, KNOB_Y - 5, KNOB_SIZE + 20, KNOB_SIZE + 20);
+		grainKnob.draw();
+		brainWidget.draw();
+		if (useDummyData) {
+			brainGood.setShape(dot_dark);
+			brainBad.setShape(jellybean_pink);
+		}
+		else {
+			brainGood.setShape(dot_green);
+			brainBad.setShape(jellybean_dark);
+		}
+		brainGood.draw();
+		brainBad.draw();
+  	}
 	// DEBUG
 	if (DEBUG) {
+		textAlign(LEFT);
+		textSize(10);
 		noStroke();
 		fill(0, 0, 0, 125);
 		rect(0, 0, WIDTH/6, HEIGHT/5);
@@ -326,19 +356,34 @@ void draw() {
 */
 
 void startEEGJ() {
-	playing = true;
-	RiriMessage msg = new RiriMessage(176, 0, 104, 127);
-    msg.send();
-	setupMusic();
-	startMusic();
+	if (myStage.doneLoading) {
+		playing = true;
+		RiriMessage msg = new RiriMessage(176, 0, 104, 127);
+	    msg.send();
+		setupMusic();
+		startMusic();
+	}
 }
 
 void stopEEGJ() {
-	stopMusic();
-	//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
-	RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
-    msg.send();
-	playing = false;
+	if (myStage.doneLoading) {
+		myStage.setActiveHitzone(0);
+		myStage.activeNote = 0;
+		relaxKnob1.rotation(-90);
+		relaxKnob2.rotation(-90);
+		relaxKnob3.rotation(-90);
+		relaxKnob4.rotation(-90);
+		focusKnob1.rotation(-90);
+		focusKnob2.rotation(-90);
+		focusKnob3.rotation(-90);
+		focusKnob4.rotation(-90);
+		grainKnob.rotation(-90);
+		stopMusic();
+		//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
+		RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
+	    msg.send();
+		playing = false;
+	}
 }
 
 void setupMusic() {
@@ -386,7 +431,31 @@ void playMusic() {
 			focusSpeaker1.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker1.graphWidth/1.1));
 			focusSpeaker2.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker2.graphWidth/1.1));
 		}
-		// Update speakers
+		// Update the Active Hit Zone
+		if (level >= 60) {
+			myStage.setActiveHitzone(1);
+		}
+		else if (level < 60 && level >= 20) {
+			myStage.setActiveHitzone(2);
+		}
+		else if (level < 20 && level >= -20) {
+			myStage.setActiveHitzone(3);
+		}
+		else if (level < -20 && level > -60) {
+			myStage.setActiveHitzone(4);
+		}
+		else {
+			myStage.setActiveHitzone(5);
+		}
+		// Game stuff
+		if (myStage.activeNote == 0) {
+			int notePos = myStage.activeHitzone + round(random(-1, 1));
+			myStage.spawnNote(notePos);
+		}
+		else {
+			myStage.incrementNote(1);
+		}
+		// Music stuff
 		if (beat == BEATS_PER_MEASURE) {
 			beat = 1;
 			// Measure Change

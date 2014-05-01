@@ -34,10 +34,10 @@ class RiriRecord{
     angle = TWO_PI/numPts;
     
     recordHeight = _recordHeight;
-    recordWidth = recordHeight * 1.45;    
+    recordWidth = recordHeight * 1.42;    
     
-    minRadius = recordHeight * 0.12; 
-    maxRadius = recordHeight * 0.25;
+    minRadius = recordHeight * 0.15; 
+    maxRadius = recordHeight * 0.30;
         
     xPos = _xPos;
     yPos = _yPos;
@@ -142,11 +142,15 @@ class RiriRecord{
     ellipse(0, 0, recordWidth, recordHeight);
 
     // Inner hole
-    strokeWeight(2);
-    fill(bgColor);   // Has to be the same color as the background  
-    float innerH = recordHeight * 0.12;
-    float innerW = recordWidth * 0.12;
+    noStroke();
+    float innerH = recordHeight * 0.05;
+    float innerW = recordWidth * 0.05;
+    float innerH2 = recordHeight * 0.25;
+    float innerW2 = recordWidth * 0.25;
     translate(0, -(innerH*.5)); 
+    fill(200);
+    ellipse(0, 0, innerW2, innerH2);
+    fill(bgColor);   // Has to be the same color as the background  
     ellipse(0, 0, innerW, innerH);
   }//END drawDisk() 
   
