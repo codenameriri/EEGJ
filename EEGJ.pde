@@ -38,7 +38,7 @@ int BEATS_PER_MEASURE = 4;
 int MEASURES_PER_PHASE = 8;
 int PHASES_PER_SONG = 4;
 int DELAY_THRESHOLD = 100;
-int beat, measure, phase, mils, lastMils, delay;
+int beat, measure, phase, mils, lastMils, delay, delayA, delayB;
 
 // Music + scales
 int PITCH_C = 60;
@@ -53,7 +53,7 @@ int highPassFilterVal, lowPassFilterVal;
 
 // MindFlex (Serial)
 //int MINDFLEX_PORT = 0;
-String MINDFLEX_PORT = "COM4";
+String MINDFLEX_PORT = "COM3";
 int START_PACKET = 3;
 int LEVEL_STEP = 4;
 Serial mindFlex;
@@ -171,6 +171,7 @@ void setup() {
 	}
 	// Stage
 	myStage = new ScrollingStage(WIDTH/2, KNOB_Y/2, WIDTH/3, HEIGHT);
+	//thread("drawStageStuff");
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
@@ -243,33 +244,20 @@ void setup() {
 */
 
 void draw() {
+	delayA = millis();
 	if (frameCount == 1 && DEBUG != true) {
 	    frame.setLocation(0,0); 
 	}
 	background(0);
-	// Music
-	if (playing) {
-		// Music
-		playMusic();
-		// Filters
-		if (recordArduinoOn) {
-			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 127, 0);
-			lowPassFilterVal = (int) map(focusRecordData, 0, 1023, 127, 0); 
-		}
-		RiriMessage highPassFilterMsg = new RiriMessage(176, 0, 102, highPassFilterVal);
-    	highPassFilterMsg.send();
-    	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
-    	lowPassFilterMsg.send();
-	}
 	// Stage
-	myStage.update();
-  	myStage.draw();
   	if (!DEBUG) {
 	  	fill(0);
 	  	noStroke();
 	  	rect(0, 0, WIDTH/3, HEIGHT);
 	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
   	}
+  	drawStageStuff();
+  	//thread("drawStageStuff");
   	if (myStage.doneLoading) {
   		// Graphs
 	  	relaxGraph.draw();
@@ -321,6 +309,21 @@ void draw() {
 		brainGood.draw();
 		brainBad.draw();
   	}
+	delayB = millis();
+	// Music
+	if (playing) {
+		// Music
+		playMusic(delayB - delayA);
+		// Filters
+		if (recordArduinoOn) {
+			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 127, 0);
+			lowPassFilterVal = (int) map(focusRecordData, 0, 1023, 127, 0); 
+		}
+		RiriMessage highPassFilterMsg = new RiriMessage(176, 0, 102, highPassFilterVal);
+    	highPassFilterMsg.send();
+    	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
+    	lowPassFilterMsg.send();
+	}
 	// DEBUG
 	if (DEBUG) {
 		textAlign(LEFT);
@@ -411,11 +414,11 @@ void startMusic() {
 	synth2.start();
 }
 
-void playMusic() {
+void playMusic(int drawDelay) {
 	// Get current time
 	mils = millis();
 	// Beat Change
-	if (mils > lastMils + beatsToNanos(1)/1000 - delay) {
+	if (mils > lastMils + beatsToNanos(1)/1000 - delay - drawDelay) {
 		int milsA = mils;
 		// Update values
 		updateLevelHistory();
@@ -500,8 +503,9 @@ void playMusic() {
 		int milsB = millis();
 		//println("\tB: "+milsB);
 		delay += milsB - milsA;
+		//delay = milsB - milsA;
 		println("DELAY: "+delay);
-		if (delay > DELAY_THRESHOLD) delay = 0;
+		if (delay > DELAY_THRESHOLD) delay = 10;
 	}
 }
 
@@ -957,14 +961,16 @@ void calculateFocusRelaxLevel(String input) {
 		focusKnob3.rotation((int) map(intData[8], min, max, -90, 90));
 		focusKnob2.rotation((int) map(intData[9], min, max, -90, 90));
 		focusKnob1.rotation((int) map(intData[10], min, max, -90, 90));*/
-		relaxKnob1.rotation((int) map(intData[3], 0, globalMax, -90, 90));
-		relaxKnob2.rotation((int) map(intData[4], 0, globalMax, -90, 90));
-		relaxKnob3.rotation((int) map(intData[5], 0, globalMax, -90, 90));
-		relaxKnob4.rotation((int) map(intData[6], 0, globalMax, -90, 90));
-		focusKnob4.rotation((int) map(intData[7], 0, globalMax, -90, 90));
-		focusKnob3.rotation((int) map(intData[8], 0, globalMax, -90, 90));
-		focusKnob2.rotation((int) map(intData[9], 0, globalMax, -90, 90));
-		focusKnob1.rotation((int) map(intData[10], 0, globalMax, -90, 90));
+		if (playing) {
+			relaxKnob1.rotation((int) map(intData[3], 0, globalMax, -90, 90));
+			relaxKnob2.rotation((int) map(intData[4], 0, globalMax, -90, 90));
+			relaxKnob3.rotation((int) map(intData[5], 0, globalMax, -90, 90));
+			relaxKnob4.rotation((int) map(intData[6], 0, globalMax, -90, 90));
+			focusKnob4.rotation((int) map(intData[7], 0, globalMax, -90, 90));
+			focusKnob3.rotation((int) map(intData[8], 0, globalMax, -90, 90));
+			focusKnob2.rotation((int) map(intData[9], 0, globalMax, -90, 90));
+			focusKnob1.rotation((int) map(intData[10], 0, globalMax, -90, 90));
+		}
 
 		// Interpret the data
 		int[] tmp = new int[intData.length - 3];
@@ -1015,4 +1021,9 @@ void calculateFocusRelaxLevel(String input) {
 	else {
 		// Do something
 	}
+}
+
+void drawStageStuff() {
+	myStage.update();
+	myStage.draw();
 }
