@@ -296,7 +296,7 @@ void draw() {
 		if (!recordArduinoOn) {
 			noStroke();
 			fill(otherColor);
-		    ellipse(relaxRecord.xPos - relaxRecord.recordWidth/2, relaxRecord.yPos - relaxRecord.recordHeight/2, 20, 20);
+		    ellipse(relaxRecord.xPos - relaxRecord.recordWidth/2, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
 		    ellipse(focusRecord.xPos + focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
 		}
 		// Widgets
@@ -393,6 +393,7 @@ void draw() {
 void startEEGJ() {
 	if (myStage.doneLoading) {
 		playing = true;
+		focusRelaxLevel = 0;
 		RiriMessage msg = new RiriMessage(176, 0, 104, 127);
 	    msg.send();
 		setupMusic();
