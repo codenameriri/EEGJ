@@ -14,8 +14,16 @@ int WIDTH = 3072;
 int HEIGHT = 768;
 int WIDGET_HEIGHT = 40;
 boolean playing;
-boolean DEBUG = true;
+boolean DEBUG = false;
 int FRAME_RATE = 30;
+
+// Colors
+color neutralColor = color(255,220,46);
+color relaxColor = color(16,255,160);
+color veryRelaxColor = color(13,255,234);
+color focusColor = color(240,133,46);
+color veryFocusColor = color(155,34,184);
+color otherColor = color(133,0,192);
 
 // MidiBus + instruments
 MidiBus mb;
@@ -285,6 +293,12 @@ void draw() {
 	 	focusRecord.dataValue = focusRecordData;
 		relaxRecord.draw();
 		focusRecord.draw();
+		if (!recordArduinoOn) {
+			noStroke();
+			fill(otherColor);
+		    ellipse(relaxRecord.xPos - relaxRecord.recordWidth/2, relaxRecord.yPos - relaxRecord.recordHeight/2, 20, 20);
+		    ellipse(focusRecord.xPos + focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
+		}
 		// Widgets
 		for (int i = 0; i < 4; i++) {
 			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
