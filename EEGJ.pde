@@ -15,6 +15,7 @@ int HEIGHT = 768;
 int WIDGET_HEIGHT = 40;
 boolean playing;
 boolean DEBUG = true;
+int FRAME_RATE = 30;
 
 // MidiBus + instruments
 MidiBus mb;
@@ -41,6 +42,9 @@ int DELAY_THRESHOLD = 100;
 int beat, measure, phase, mils, lastMils, delay, delayA, delayB;
 
 // Music + scales
+int SCORE_EASING_STEPS = 5;
+int score_easing = SCORE_EASING_STEPS;
+int score_effect_val = 0;
 int PITCH_C = 60;
 int PITCH_F = 65;
 int PITCH_G = 67;
@@ -115,7 +119,7 @@ void setup() {
 	// Sketch setup
 	size(WIDTH, HEIGHT);
 	background(0);
-	frameRate(60);
+	frameRate(FRAME_RATE);
 	smooth();
 	Ani.init(this);
 	playing = false;
@@ -256,8 +260,9 @@ void draw() {
 	  	rect(0, 0, WIDTH/3, HEIGHT);
 	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
   	}
-  	drawStageStuff();
-  	//thread("drawStageStuff");
+  	// Draw the stage
+  	myStage.update();
+  	myStage.draw();
   	if (myStage.doneLoading) {
   		// Graphs
 	  	relaxGraph.draw();
@@ -323,6 +328,19 @@ void draw() {
     	highPassFilterMsg.send();
     	RiriMessage lowPassFilterMsg = new RiriMessage(176, 0, 103, lowPassFilterVal);
     	lowPassFilterMsg.send();
+    	// Score effect
+    	if (score_easing < SCORE_EASING_STEPS) {
+    		score_effect_val += (120 / SCORE_EASING_STEPS);
+    		score_easing++;
+    	}
+    	else {
+    		score_effect_val -= 2;
+    		if (score_effect_val < 0) {
+    			score_effect_val = 0;
+    		}
+    	}
+    	RiriMessage effectMsg = new RiriMessage(176, 0, 106, score_effect_val);
+    	effectMsg.send();
 	}
 	// DEBUG
 	if (DEBUG) {
@@ -385,6 +403,8 @@ void stopEEGJ() {
 		//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
 		RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
 	    msg.send();
+	    RiriMessage msg = new RiriMessage(176, 0, 106, 0);
+		msg.send();
 		playing = false;
 	}
 }
@@ -768,6 +788,10 @@ void keyPressed() {
 		RiriMessage msg = new RiriMessage(176, 0, 105, 0); 
     	msg.send();
 	}
+	if (key == 'b') { // Score Effect
+		RiriMessage msg = new RiriMessage(176, 0, 106, 0);
+		msg.send();
+	}
 	// DEBUG
 	if (key == '0') {
 		println("1/4: "+beatsToNanos(1));
@@ -1024,6 +1048,9 @@ void calculateFocusRelaxLevel(String input) {
 }
 
 void drawStageStuff() {
-	myStage.update();
-	myStage.draw();
+	while (true) {
+		myStage.update();
+		myStage.draw();
+		delay(1000/FRAME_RATE);
+	}
 }

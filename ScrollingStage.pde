@@ -340,6 +340,7 @@ class ScrollingStage {
   // called when note reaches end of its column
   void calcScore(int completedNote){
     if( notesMatchHitzone() ){
+      score_easing = 0;
       incrementScore(completedNote);
       String textType;
       switch( completedNote ){
