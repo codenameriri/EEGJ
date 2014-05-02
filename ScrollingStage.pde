@@ -90,7 +90,7 @@ class ScrollingStage {
     h                = imgHeight;
     doneLoading      = false;
     showSuccessTxt   = false;
-    starCount        = 500;
+    starCount        = 0; //500;
     currentNoteFrame = -1;
     activeNote       = 0;
     activeHitzone    = 0;

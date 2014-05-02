@@ -14,8 +14,8 @@ int WIDTH = 3072;
 int HEIGHT = 768;
 int WIDGET_HEIGHT = 40;
 boolean playing;
-boolean DEBUG = false;
-int FRAME_RATE = 30;
+boolean DEBUG = true;
+int FRAME_RATE = 60;
 
 // Colors
 color neutralColor = color(255,220,46);
@@ -99,7 +99,7 @@ color relaxRecordColor, focusRecordColor, recordBackgroundColor;
 // Widgets - Brennan
 String WIDGET_DIR = "widgets/";
 int KNOB_SIZE = 120;
-int KNOB_Y = 650;
+int KNOB_Y = 630;
 PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white, knobtrack_dark;
 PShape brain, dot_green, dot_dark, jellybean_dark, jellybean_pink;
 PImage knob_yellow_image;
@@ -107,8 +107,11 @@ SVGWidget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2
 SVGWidget brainGood, brainBad, brainWidget;
 ImageWidget grainKnob;
 
-// Stage - Tom
+// Stage - Tom and Whitney
 ScrollingStage myStage;
+
+// Panels - Antwan
+PImage focusOverlay, relaxOverlay, focusShadow, relaxShadow, widgetOverlay;
 
 /*
 *	Sketch Setup
@@ -187,8 +190,8 @@ void setup() {
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
-  	relaxGraph = new RiriGraph(4*(WIDTH/6), 0, WIDTH/6, HEIGHT/2, relaxGraphBG, 0);
-  	focusGraph = new RiriGraph(WIDTH/6, 0, WIDTH/6, HEIGHT/2, focusGraphBG, 1);
+  	relaxGraph = new RiriGraph(4*(WIDTH/6) + 35, 20, WIDTH/6, 2*HEIGHT/3 + 20, relaxGraphBG, 0);
+  	focusGraph = new RiriGraph(WIDTH/6 - 35, 20, WIDTH/6, 2*HEIGHT/3 + 20, focusGraphBG, 1);
   	// Speaker setup
   	relaxSpeakerBG = loadImage("relax_radial.png");
   	focusSpeakerBG = loadImage("focus_radial.png");
@@ -209,8 +212,8 @@ void setup() {
 	    recordArduinoOn = false;
 	    //useDummyData = true;
 	}
-	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, 3*(WIDTH/4) + 25, 3*(HEIGHT/4), true);
-	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, WIDTH/4 - 25, 3*(HEIGHT/4), false);
+	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 32, HEIGHT/5 + 15, 5*(WIDTH/18) + 15, 5*(HEIGHT/6) + 20, false);
+	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 32, HEIGHT/5 + 15, 13*(WIDTH/18) - 15, 5*(HEIGHT/6) + 20, true);
 	// Initialize DataGen
 	inputSettings.put("brainwave", 1000);
 	inputSettings.put("pressure", 200);
@@ -249,6 +252,12 @@ void setup() {
 	brainWidget = new SVGWidget(15*(WIDTH/30) + 15, KNOB_Y, KNOB_SIZE, KNOB_SIZE, brain);
 	brainGood = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y - KNOB_SIZE/5, KNOB_SIZE, KNOB_SIZE, dot_green);
 	brainBad = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y + KNOB_SIZE/8, KNOB_SIZE, KNOB_SIZE, jellybean_dark);
+	// Overlays
+	focusOverlay = loadImage("antwan/focusoverlay.png");
+	relaxOverlay = loadImage("antwan/relaxoverlay.png");
+	focusShadow = loadImage("antwan/focusspeaker_shade.png");
+	relaxShadow = loadImage("antwan/relaxspeaker_shade.png");
+	widgetOverlay = loadImage("antwan/widgetoverlay.png");
 }
 
 /*
@@ -275,11 +284,17 @@ void draw() {
   		// Graphs
 	  	relaxGraph.draw();
 	  	focusGraph.draw();
+	  	// Overlays
+	  	image(focusOverlay, 0, 0);
+	  	image(relaxOverlay, 2*(WIDTH/3), 0);
 	  	// Speakers
 	  	relaxSpeaker1.draw();
 	  	relaxSpeaker2.draw();
 	  	focusSpeaker1.draw();
 	  	focusSpeaker2.draw();
+	  	// Shadow
+	  	image(focusShadow, 0, 0);
+	  	image(relaxShadow, 2*(WIDTH/3), 0);
 	  	// Records
 		if (recordArduinoOn) {
 		    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
@@ -289,17 +304,18 @@ void draw() {
 		    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
 		    focusRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure"))); 
 		}
-		relaxRecord.dataValue = relaxRecordData;
+		relaxRecord.dataValue = 100;//relaxRecordData;
 	 	focusRecord.dataValue = focusRecordData;
 		relaxRecord.draw();
 		focusRecord.draw();
 		if (!recordArduinoOn) {
 			noStroke();
 			fill(otherColor);
-		    ellipse(relaxRecord.xPos - relaxRecord.recordWidth/2, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
-		    ellipse(focusRecord.xPos + focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
+		    ellipse(relaxRecord.xPos + relaxRecord.recordWidth/2, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
+		    ellipse(focusRecord.xPos - focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
 		}
 		// Widgets
+		image(widgetOverlay, WIDTH/3, 0);
 		for (int i = 0; i < 4; i++) {
 			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
 		}
@@ -514,6 +530,7 @@ void playMusic(int drawDelay) {
 				}
 				else {
 					phase++;
+					focusRelaxLevel = 0;
 				}
 			}
 			else if (measure == MEASURES_PER_PHASE - 1) {
