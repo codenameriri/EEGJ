@@ -167,9 +167,9 @@ class ScrollingStage {
   void drawStageVignette(){
     imageMode(CORNER);
     tint(255, focusVignAlpha);
-    image(focusVignette, 0, 0);
-    tint(255, relaxVignAlpha);
-    image(relaxVignette, 0, this.w-1165);
+    image(focusVignette, this.x - this.w/2, 0, this.w, this.h);
+    tint(255, relaxVignAlpha); 
+    image(relaxVignette, this.x - this.w/2, 0, this.w, this.h);
     tint(255,255);
     imageMode(CENTER);
   }

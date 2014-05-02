@@ -253,16 +253,16 @@ void draw() {
 	    frame.setLocation(0,0); 
 	}
 	background(0);
-	// Stage
+  	// Draw the stage
+  	myStage.update();
+  	myStage.draw();
+  	// Stage
   	if (!DEBUG) {
 	  	fill(0);
 	  	noStroke();
 	  	rect(0, 0, WIDTH/3, HEIGHT);
 	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
   	}
-  	// Draw the stage
-  	myStage.update();
-  	myStage.draw();
   	if (myStage.doneLoading) {
   		// Graphs
 	  	relaxGraph.draw();
@@ -403,8 +403,8 @@ void stopEEGJ() {
 		//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
 		RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
 	    msg.send();
-	    RiriMessage msg = new RiriMessage(176, 0, 106, 0);
-		msg.send();
+	    RiriMessage msg2 = new RiriMessage(176, 0, 106, 0);
+		msg2.send();
 		playing = false;
 	}
 }
@@ -472,7 +472,16 @@ void playMusic(int drawDelay) {
 		}
 		// Game stuff
 		if (myStage.activeNote == 0) {
-			int notePos = myStage.activeHitzone + round(random(-1, 1));
+			int notePos = 0;
+			if (myStage.activeHitzone == 5) {
+				notePos = myStage.activeHitzone + round(random(-1, 0));
+			}
+			else if (myStage.activeHitzone == 1) {
+				notePos = myStage.activeHitzone + round(random(0, 1));
+			}
+			else {
+				notePos = myStage.activeHitzone + round(random(-1, 1));
+			}
 			myStage.spawnNote(notePos);
 		}
 		else {
