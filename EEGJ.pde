@@ -190,15 +190,15 @@ void setup() {
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
-  	relaxGraph = new RiriGraph(4*(WIDTH/6) + 35, 20, WIDTH/6, 2*HEIGHT/3 + 20, relaxGraphBG, 0);
-  	focusGraph = new RiriGraph(WIDTH/6 - 35, 20, WIDTH/6, 2*HEIGHT/3 + 20, focusGraphBG, 1);
+  	relaxGraph = new RiriGraph(4*(WIDTH/6) + 30, 20, WIDTH/6, 2*HEIGHT/3 + 20, relaxGraphBG, 0);
+  	focusGraph = new RiriGraph(WIDTH/6 - 30, 20, WIDTH/6, 2*HEIGHT/3 + 20, focusGraphBG, 1);
   	// Speaker setup
   	relaxSpeakerBG = loadImage("relax_radial.png");
   	focusSpeakerBG = loadImage("focus_radial.png");
-  	relaxSpeaker1 = new RiriSpeaker(WIDTH - 250 - 120, HEIGHT/4 - 150, 250, 250, relaxSpeakerBG);
-  	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 75, 3*(HEIGHT/4) - 200, 350, 350, relaxSpeakerBG);
-  	focusSpeaker1 = new RiriSpeaker(120, HEIGHT/4 - 150, 250, 250, focusSpeakerBG);
-  	focusSpeaker2 = new RiriSpeaker(75, 3*(HEIGHT/4) - 200, 350, 350, focusSpeakerBG);
+  	relaxSpeaker1 = new RiriSpeaker(WIDTH - 250 - 120, HEIGHT/4 - 125, 200, 200, relaxSpeakerBG);
+  	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 70, 3*(HEIGHT/4) - 175, 300, 300, relaxSpeakerBG);
+  	focusSpeaker1 = new RiriSpeaker(155, HEIGHT/4 - 125, 200, 200, focusSpeakerBG);
+  	focusSpeaker2 = new RiriSpeaker(110, 3*(HEIGHT/4) - 175, 300, 300, focusSpeakerBG);
   	// Record setup
   	relaxRecordData = 0;
   	focusRecordData = 0;
@@ -274,12 +274,6 @@ void draw() {
   	myStage.update();
   	myStage.draw();
   	// Stage
-  	if (!DEBUG) {
-	  	fill(0);
-	  	noStroke();
-	  	rect(0, 0, WIDTH/3, HEIGHT);
-	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
-  	}
   	if (myStage.doneLoading) {
   		// Graphs
 	  	relaxGraph.draw();
@@ -287,14 +281,7 @@ void draw() {
 	  	// Overlays
 	  	image(focusOverlay, 0, 0);
 	  	image(relaxOverlay, 2*(WIDTH/3), 0);
-	  	// Speakers
-	  	relaxSpeaker1.draw();
-	  	relaxSpeaker2.draw();
-	  	focusSpeaker1.draw();
-	  	focusSpeaker2.draw();
-	  	// Shadow
-	  	image(focusShadow, 0, 0);
-	  	image(relaxShadow, 2*(WIDTH/3), 0);
+	  	image(widgetOverlay, WIDTH/3, 0);
 	  	// Records
 		if (recordArduinoOn) {
 		    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
@@ -304,18 +291,27 @@ void draw() {
 		    relaxRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure")));
 		    focusRecordData = (Float.parseFloat(dummyDataGenerator.getInput("pressure"))); 
 		}
-		relaxRecord.dataValue = 100;//relaxRecordData;
+		relaxRecord.dataValue = relaxRecordData;
 	 	focusRecord.dataValue = focusRecordData;
 		relaxRecord.draw();
 		focusRecord.draw();
 		if (!recordArduinoOn) {
 			noStroke();
 			fill(otherColor);
-		    ellipse(relaxRecord.xPos + relaxRecord.recordWidth/2, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
-		    ellipse(focusRecord.xPos - focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
+		    ellipse(relaxRecord.xPos + relaxRecord.recordWidth/2 + 20, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
+		    ellipse(focusRecord.xPos - focusRecord.recordWidth/2 - 20, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
 		}
+	  	// Speakers
+	  	relaxSpeaker1.draw();
+	  	relaxSpeaker2.draw();
+	  	focusSpeaker1.draw();
+	  	focusSpeaker2.draw();
+	  	// Shadow
+	  	noFill();
+	  	noStroke();
+	  	image(focusShadow, 0, 0);
+	  	image(relaxShadow, 2*(WIDTH/3), 0);
 		// Widgets
-		image(widgetOverlay, WIDTH/3, 0);
 		for (int i = 0; i < 4; i++) {
 			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
 		}
@@ -475,16 +471,16 @@ void playMusic(int drawDelay) {
 		updateLevelHistory();
 		//updateBpmHistory();
 		// Update graphs and speakers
-		if (level <= 0) {
-			relaxGraph.setMarkerX((int) map(level, 0, -100, 0, relaxGraph.graphWidth));
-			relaxSpeaker1.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker1.graphWidth/1.1));
-			relaxSpeaker2.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker2.graphWidth/1.1));
-		}
-		else if (level >= 0) {
-			focusGraph.setMarkerX((int) map(level, 0, 100, 0, focusGraph.graphWidth));
-			focusSpeaker1.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker1.graphWidth/1.1));
-			focusSpeaker2.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker2.graphWidth/1.1));
-		}
+		//if (level <= 0) {
+			relaxGraph.setMarkerX((int) map(level, 100, -100, 0, relaxGraph.graphWidth));
+			relaxSpeaker1.setSpeakerSize((int) map(level, 100, -100, 0, relaxSpeaker1.graphWidth/1.1));
+			relaxSpeaker2.setSpeakerSize((int) map(level, 100, -100, 0, relaxSpeaker2.graphWidth/1.1));
+		//}
+		//else if (level >= 0) {
+			focusGraph.setMarkerX((int) map(level, -100, 100, 0, focusGraph.graphWidth));
+			focusSpeaker1.setSpeakerSize((int) map(level, -100, 100, 0, focusSpeaker1.graphWidth/1.1));
+			focusSpeaker2.setSpeakerSize((int) map(level, -100, 100, 0, focusSpeaker2.graphWidth/1.1));
+		//}
 		// Update the Active Hit Zone
 		if (level >= 60) {
 			myStage.setActiveHitzone(1);
