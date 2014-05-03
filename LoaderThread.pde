@@ -7,9 +7,9 @@ class LoaderThread extends Thread {
   String statusText;
 
   // IMAGE CONSTANTS
-  final int GRID_FRAME_CNT    = 10;
+  final int GRID_FRAME_CNT    = 8;
   final int HITZONE_FRAME_CNT = 5;
-  final int STAGE_FRAME_CNT   = 6;
+  final int STAGE_FRAME_CNT   = 9;
   final int COLSEQ_FRAME_CNT  = 10;
   final String EXTN            = ".png";
   final String GRID_DIR       = "grid/";

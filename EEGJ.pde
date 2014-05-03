@@ -311,6 +311,19 @@ void draw() {
 	  	noStroke();
 	  	image(focusShadow, 0, 0);
 	  	image(relaxShadow, 2*(WIDTH/3), 0);
+	  	// Timemarkers
+	  	for (int i = 0; i < MEASURES_PER_PHASE * PHASES_PER_SONG; i++) {
+	  		int timeX = WIDTH/3 + 155 + i*23;
+	  		int timeY = 600;
+	  		int diameter = (i % MEASURES_PER_PHASE == 7) ? 15 : 10;
+	  		if (i < measure + (MEASURES_PER_PHASE * (phase - 1))) {
+	  			fill(255);
+	  		}
+	  		else {
+	  			fill(155);
+	  		}
+	  		ellipse(timeX, timeY, diameter, diameter);
+	  	}
 		// Widgets
 		for (int i = 0; i < 4; i++) {
 			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
@@ -406,6 +419,7 @@ void startEEGJ() {
 	if (myStage.doneLoading) {
 		playing = true;
 		focusRelaxLevel = 0;
+		myStage.score = 0;
 		RiriMessage msg = new RiriMessage(176, 0, 104, 127);
 	    msg.send();
 		setupMusic();
@@ -522,11 +536,13 @@ void playMusic(int drawDelay) {
 				measure = 1;
 				if (phase == PHASES_PER_SONG) {
 					// We're done!
+					phase++;
 					stopEEGJ();
 				}
 				else {
 					phase++;
-					focusRelaxLevel = 0;
+					if (abs(focusRelaxLevel) >= 80)
+						focusRelaxLevel = 0;
 				}
 			}
 			else if (measure == MEASURES_PER_PHASE - 1) {
