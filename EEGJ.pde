@@ -15,7 +15,7 @@ int HEIGHT = 768;
 int WIDGET_HEIGHT = 40;
 boolean playing;
 boolean DEBUG = false;
-int FRAME_RATE = 30;
+int FRAME_RATE = 60;
 
 // Colors
 color neutralColor = color(255,220,46);
@@ -67,7 +67,7 @@ int highPassFilterVal, lowPassFilterVal;
 //int MINDFLEX_PORT = 0;
 String MINDFLEX_PORT = "COM3";
 int START_PACKET = 3;
-int LEVEL_STEP = 4;
+int LEVEL_STEP = 10;
 Serial mindFlex;
 PrintWriter output;
 int packetCount, globalMax;
@@ -88,8 +88,8 @@ PImage relaxSpeakerBG, focusSpeakerBG;
 // Records - Mia
 //int RECORD_ARDUINO_PORT = 1;
 String RECORD_ARDUINO_PORT = "COM5";
-int RELAX_RECORD_PIN = 0;
-int FOCUS_RECORD_PIN = 2;
+int RELAX_RECORD_PIN = 2;
+int FOCUS_RECORD_PIN = 0;
 Arduino recordArduino;
 boolean recordArduinoOn;
 RiriRecord relaxRecord, focusRecord;
@@ -99,7 +99,7 @@ color relaxRecordColor, focusRecordColor, recordBackgroundColor;
 // Widgets - Brennan
 String WIDGET_DIR = "widgets/";
 int KNOB_SIZE = 120;
-int KNOB_Y = 650;
+int KNOB_Y = 630;
 PShape knob_blue, knob_green, knob_orange, knob_pink, knobtrack_white, knobtrack_dark;
 PShape brain, dot_green, dot_dark, jellybean_dark, jellybean_pink;
 PImage knob_yellow_image;
@@ -107,8 +107,11 @@ SVGWidget relaxKnob1, relaxKnob2, relaxKnob3, relaxKnob4, focusKnob1, focusKnob2
 SVGWidget brainGood, brainBad, brainWidget;
 ImageWidget grainKnob;
 
-// Stage - Tom
+// Stage - Tom and Whitney
 ScrollingStage myStage;
+
+// Panels - Antwan
+PImage focusOverlay, relaxOverlay, focusShadow, relaxShadow, widgetOverlay;
 
 /*
 *	Sketch Setup
@@ -187,15 +190,15 @@ void setup() {
 	// Graph setup
   	relaxGraphBG = loadImage("relax_gradient2.png");
   	focusGraphBG = loadImage("focus_gradient2.png");
-  	relaxGraph = new RiriGraph(4*(WIDTH/6), 0, WIDTH/6, HEIGHT/2, relaxGraphBG, 0);
-  	focusGraph = new RiriGraph(WIDTH/6, 0, WIDTH/6, HEIGHT/2, focusGraphBG, 1);
+  	relaxGraph = new RiriGraph(4*(WIDTH/6) + 30, 20, WIDTH/6, 2*HEIGHT/3 + 20, relaxGraphBG, 0);
+  	focusGraph = new RiriGraph(WIDTH/6 - 30, 20, WIDTH/6, 2*HEIGHT/3 + 20, focusGraphBG, 1);
   	// Speaker setup
   	relaxSpeakerBG = loadImage("relax_radial.png");
   	focusSpeakerBG = loadImage("focus_radial.png");
-  	relaxSpeaker1 = new RiriSpeaker(WIDTH - 250 - 120, HEIGHT/4 - 150, 250, 250, relaxSpeakerBG);
-  	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 75, 3*(HEIGHT/4) - 200, 350, 350, relaxSpeakerBG);
-  	focusSpeaker1 = new RiriSpeaker(120, HEIGHT/4 - 150, 250, 250, focusSpeakerBG);
-  	focusSpeaker2 = new RiriSpeaker(75, 3*(HEIGHT/4) - 200, 350, 350, focusSpeakerBG);
+  	relaxSpeaker1 = new RiriSpeaker(WIDTH - 250 - 120, HEIGHT/4 - 125, 200, 200, relaxSpeakerBG);
+  	relaxSpeaker2 = new RiriSpeaker(WIDTH - 350 - 70, 3*(HEIGHT/4) - 175, 300, 300, relaxSpeakerBG);
+  	focusSpeaker1 = new RiriSpeaker(155, HEIGHT/4 - 125, 200, 200, focusSpeakerBG);
+  	focusSpeaker2 = new RiriSpeaker(110, 3*(HEIGHT/4) - 175, 300, 300, focusSpeakerBG);
   	// Record setup
   	relaxRecordData = 0;
   	focusRecordData = 0;
@@ -209,8 +212,8 @@ void setup() {
 	    recordArduinoOn = false;
 	    //useDummyData = true;
 	}
-	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, 3*(WIDTH/4) + 25, 3*(HEIGHT/4), true);
-	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 28, HEIGHT/2 - 50, WIDTH/4 - 25, 3*(HEIGHT/4), false);
+	focusRecord = new RiriRecord(focusRecordData, recordArduinoOn, 32, HEIGHT/5 + 15, 5*(WIDTH/18) + 15, 5*(HEIGHT/6) + 20, false);
+	relaxRecord = new RiriRecord(relaxRecordData, recordArduinoOn, 32, HEIGHT/5 + 15, 13*(WIDTH/18) - 15, 5*(HEIGHT/6) + 20, true);
 	// Initialize DataGen
 	inputSettings.put("brainwave", 1000);
 	inputSettings.put("pressure", 200);
@@ -249,6 +252,12 @@ void setup() {
 	brainWidget = new SVGWidget(15*(WIDTH/30) + 15, KNOB_Y, KNOB_SIZE, KNOB_SIZE, brain);
 	brainGood = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y - KNOB_SIZE/5, KNOB_SIZE, KNOB_SIZE, dot_green);
 	brainBad = new SVGWidget(15*(WIDTH/30) - KNOB_SIZE/2 + 20, KNOB_Y + KNOB_SIZE/8, KNOB_SIZE, KNOB_SIZE, jellybean_dark);
+	// Overlays
+	focusOverlay = loadImage("antwan/focusoverlay.png");
+	relaxOverlay = loadImage("antwan/relaxoverlay.png");
+	focusShadow = loadImage("antwan/focusspeaker_shade.png");
+	relaxShadow = loadImage("antwan/relaxspeaker_shade.png");
+	widgetOverlay = loadImage("antwan/widgetoverlay.png");
 }
 
 /*
@@ -265,21 +274,14 @@ void draw() {
   	myStage.update();
   	myStage.draw();
   	// Stage
-  	if (!DEBUG) {
-	  	fill(0);
-	  	noStroke();
-	  	rect(0, 0, WIDTH/3, HEIGHT);
-	  	rect(2*(WIDTH/3), 0, WIDTH/3, HEIGHT);
-  	}
   	if (myStage.doneLoading) {
   		// Graphs
 	  	relaxGraph.draw();
 	  	focusGraph.draw();
-	  	// Speakers
-	  	relaxSpeaker1.draw();
-	  	relaxSpeaker2.draw();
-	  	focusSpeaker1.draw();
-	  	focusSpeaker2.draw();
+	  	// Overlays
+	  	image(focusOverlay, 0, 0);
+	  	image(relaxOverlay, 2*(WIDTH/3), 0);
+	  	image(widgetOverlay, WIDTH/3, 0);
 	  	// Records
 		if (recordArduinoOn) {
 		    relaxRecordData = recordArduino.analogRead(RELAX_RECORD_PIN);
@@ -296,9 +298,32 @@ void draw() {
 		if (!recordArduinoOn) {
 			noStroke();
 			fill(otherColor);
-		    ellipse(relaxRecord.xPos - relaxRecord.recordWidth/2, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
-		    ellipse(focusRecord.xPos + focusRecord.recordWidth/2, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
+		    ellipse(relaxRecord.xPos + relaxRecord.recordWidth/2 + 20, relaxRecord.yPos + relaxRecord.recordHeight/2, 20, 20);
+		    ellipse(focusRecord.xPos - focusRecord.recordWidth/2 - 20, focusRecord.yPos + focusRecord.recordHeight/2, 20, 20);
 		}
+	  	// Speakers
+	  	relaxSpeaker1.draw();
+	  	relaxSpeaker2.draw();
+	  	focusSpeaker1.draw();
+	  	focusSpeaker2.draw();
+	  	// Shadow
+	  	noFill();
+	  	noStroke();
+	  	image(focusShadow, 0, 0);
+	  	image(relaxShadow, 2*(WIDTH/3), 0);
+	  	// Timemarkers
+	  	for (int i = 0; i < MEASURES_PER_PHASE * PHASES_PER_SONG; i++) {
+	  		int timeX = WIDTH/3 + 155 + i*23;
+	  		int timeY = 600;
+	  		int diameter = (i % MEASURES_PER_PHASE == 7) ? 15 : 10;
+	  		if (i < measure + (MEASURES_PER_PHASE * (phase - 1))) {
+	  			fill(255);
+	  		}
+	  		else {
+	  			fill(155);
+	  		}
+	  		ellipse(timeX, timeY, diameter, diameter);
+	  	}
 		// Widgets
 		for (int i = 0; i < 4; i++) {
 			shape(knobtrack_dark, (16+i)*(WIDTH/30) + 10, KNOB_Y, KNOB_SIZE, KNOB_SIZE);
@@ -335,7 +360,7 @@ void draw() {
 		playMusic(delayB - delayA);
 		// Filters
 		if (recordArduinoOn) {
-			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 127, 0);
+			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 0, 127);
 			lowPassFilterVal = (int) map(focusRecordData, 0, 1023, 127, 0); 
 		}
 		RiriMessage highPassFilterMsg = new RiriMessage(176, 0, 102, highPassFilterVal);
@@ -394,8 +419,9 @@ void startEEGJ() {
 	if (myStage.doneLoading) {
 		playing = true;
 		focusRelaxLevel = 0;
-		RiriMessage msg = new RiriMessage(176, 0, 104, 127);
-	    msg.send();
+		myStage.score = 0;
+		//RiriMessage msg = new RiriMessage(176, 0, 104, 127);
+	    //msg.send();
 		setupMusic();
 		startMusic();
 	}
@@ -416,8 +442,8 @@ void stopEEGJ() {
 		grainKnob.rotation(-90);
 		stopMusic();
 		//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
-		RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
-	    msg.send();
+		//RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
+	    //msg.send();
 	    RiriMessage msg2 = new RiriMessage(176, 0, 106, 0);
 		msg2.send();
 		playing = false;
@@ -459,27 +485,27 @@ void playMusic(int drawDelay) {
 		updateLevelHistory();
 		//updateBpmHistory();
 		// Update graphs and speakers
-		if (level <= 0) {
-			relaxGraph.setMarkerX((int) map(level, 0, -100, 0, relaxGraph.graphWidth));
-			relaxSpeaker1.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker1.graphWidth/1.1));
-			relaxSpeaker2.setSpeakerSize((int) map(level, 0, -100, 0, relaxSpeaker2.graphWidth/1.1));
-		}
-		else if (level >= 0) {
-			focusGraph.setMarkerX((int) map(level, 0, 100, 0, focusGraph.graphWidth));
-			focusSpeaker1.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker1.graphWidth/1.1));
-			focusSpeaker2.setSpeakerSize((int) map(level, 0, 100, 0, focusSpeaker2.graphWidth/1.1));
-		}
+		//if (level <= 0) {
+			relaxGraph.setMarkerX((int) map(level, 100, -100, 0, relaxGraph.graphWidth));
+			relaxSpeaker1.setSpeakerSize((int) map(level, 100, -100, 0, relaxSpeaker1.graphWidth/1.1));
+			relaxSpeaker2.setSpeakerSize((int) map(level, 100, -100, 0, relaxSpeaker2.graphWidth/1.1));
+		//}
+		//else if (level >= 0) {
+			focusGraph.setMarkerX((int) map(level, -100, 100, 0, focusGraph.graphWidth));
+			focusSpeaker1.setSpeakerSize((int) map(level, -100, 100, 0, focusSpeaker1.graphWidth/1.1));
+			focusSpeaker2.setSpeakerSize((int) map(level, -100, 100, 0, focusSpeaker2.graphWidth/1.1));
+		//}
 		// Update the Active Hit Zone
-		if (level >= 60) {
+		if (level >= 50) {
 			myStage.setActiveHitzone(1);
 		}
-		else if (level < 60 && level >= 20) {
+		else if (level < 50 && level >= 20) {
 			myStage.setActiveHitzone(2);
 		}
 		else if (level < 20 && level >= -20) {
 			myStage.setActiveHitzone(3);
 		}
-		else if (level < -20 && level > -60) {
+		else if (level < -20 && level > -50) {
 			myStage.setActiveHitzone(4);
 		}
 		else {
@@ -510,10 +536,13 @@ void playMusic(int drawDelay) {
 				measure = 1;
 				if (phase == PHASES_PER_SONG) {
 					// We're done!
+					phase++;
 					stopEEGJ();
 				}
 				else {
 					phase++;
+					if (abs(focusRelaxLevel) >= 60)
+						focusRelaxLevel = 0;
 				}
 			}
 			else if (measure == MEASURES_PER_PHASE - 1) {
@@ -905,13 +934,13 @@ void setMeasureLevelAndGrain() {
 	if (val < 20) {
 		grain = 0;
 	}
-	else if (val >= 20 && val < 50) {
+	else if (val >= 20 && val < 40) {
 		grain = 1;
 	}
-	else if (val >= 50 && val < 80) {
+	else if (val >= 40 && val < 60) {
 		grain = 2;
 	}
-	else if (val >= 80) {
+	else if (val >= 60) {
 		grain = 3;
 	}
 	else {
@@ -1038,7 +1067,7 @@ void calculateFocusRelaxLevel(String input) {
 			}
 		}
 		focusVal = (int) (focusVal / 4);
-		relaxVal = (int) (relaxVal / 3);
+		relaxVal = (int) (relaxVal / 4);
 
 
 		// Set the brain level
@@ -1051,10 +1080,10 @@ void calculateFocusRelaxLevel(String input) {
 		// METHOD 3: Adjust focusRelaxLevel based on "direction" of mental activity
 		// and adjust by the current grain
 		if (newLevel >= 0) {
-			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain*2) : LEVEL_STEP;
 		}
 		else if (newLevel <= -1) {
-			focusRelaxLevel -= (focusRelaxLevel < 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+			focusRelaxLevel -= (focusRelaxLevel < 0) ? (LEVEL_STEP - grain*2) : LEVEL_STEP;
 		}
 		if (focusRelaxLevel > MAX_FOCUS) {
 			focusRelaxLevel = MAX_FOCUS;

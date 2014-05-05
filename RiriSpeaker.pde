@@ -63,12 +63,12 @@ public void draw()
   fill(0);
   noStroke();
   // Black background
-  rect(xPos, yPos, graphWidth, graphHeight);
+  //rect(xPos, yPos, graphWidth, graphHeight);
   // Calculate the center of the speaker
   centerX = xPos + graphWidth /2;
   centerY = yPos + graphHeight /2;
   // Draw the outer circles
-  stroke(255);
+  stroke(63); 
   strokeWeight(3);
   fill(0);
   ellipse(centerX, centerY, graphWidth, graphHeight);
@@ -79,6 +79,7 @@ public void draw()
   image(background,centerX, centerY, radius, radius);
   // Draw the other circles
   noFill();
+  stroke(208);
   strokeWeight(1);
   ellipse(centerX, centerY, graphWidth/1.4, graphHeight/1.4);
   ellipse(centerX, centerY, graphWidth/1.6, graphHeight/1.6);
@@ -92,9 +93,10 @@ public void draw()
   ellipse(centerX, centerY, graphWidth/4.2, graphHeight/4.2);
   strokeWeight(3);
   fill(0);
+  stroke(63); 
   ellipse(centerX, centerY, graphWidth/5, graphHeight/5);
   // Frills
-  fill(255);
+  fill(208);
   noStroke();
   ellipse(xPos + graphWidth/2, yPos + graphHeight/42, graphWidth/42, graphHeight/42);
   ellipse(xPos + graphWidth/42, yPos + graphHeight/2, graphWidth/42, graphHeight/42);

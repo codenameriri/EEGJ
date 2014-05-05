@@ -36,8 +36,8 @@ class RiriRecord{
     recordHeight = _recordHeight;
     recordWidth = recordHeight * 1.42;    
     
-    minRadius = recordHeight * 0.15; 
-    maxRadius = recordHeight * 0.30;
+    minRadius = recordHeight * 0.12; 
+    maxRadius = recordHeight * 0.19;
         
     xPos = _xPos;
     yPos = _yPos;
@@ -111,16 +111,16 @@ class RiriRecord{
         radius += random(1);
       }
       if( dataValue > 0 && dataValue < (maxData*0.25) ){ 
-        radius += random(1,5);
+        radius += random(1,4);
       }
       else if( dataValue > (maxData*0.25) && dataValue < (maxData*0.5) ){ 
-        radius += random(5,13);
+        radius += random(4,12);
       }
       else if( dataValue > (maxData*0.5) && dataValue < (maxData*0.75) ){ 
-        radius += random(13,25);
+        radius += random(12,20);
       }
       else if( dataValue > (maxData*0.75) && dataValue <= maxData){
-        radius += random(25,41);
+        radius += random(20,32);
       }
  
       float xPt = (radius * 1.45) * cos(angle * n);
