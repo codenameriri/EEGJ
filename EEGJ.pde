@@ -14,7 +14,7 @@ int WIDTH = 3072;
 int HEIGHT = 768;
 int WIDGET_HEIGHT = 40;
 boolean playing;
-boolean DEBUG = true;
+boolean DEBUG = false;
 int FRAME_RATE = 60;
 
 // Colors
@@ -67,7 +67,7 @@ int highPassFilterVal, lowPassFilterVal;
 //int MINDFLEX_PORT = 0;
 String MINDFLEX_PORT = "COM3";
 int START_PACKET = 3;
-int LEVEL_STEP = 4;
+int LEVEL_STEP = 10;
 Serial mindFlex;
 PrintWriter output;
 int packetCount, globalMax;
@@ -88,8 +88,8 @@ PImage relaxSpeakerBG, focusSpeakerBG;
 // Records - Mia
 //int RECORD_ARDUINO_PORT = 1;
 String RECORD_ARDUINO_PORT = "COM5";
-int RELAX_RECORD_PIN = 0;
-int FOCUS_RECORD_PIN = 2;
+int RELAX_RECORD_PIN = 2;
+int FOCUS_RECORD_PIN = 0;
 Arduino recordArduino;
 boolean recordArduinoOn;
 RiriRecord relaxRecord, focusRecord;
@@ -360,7 +360,7 @@ void draw() {
 		playMusic(delayB - delayA);
 		// Filters
 		if (recordArduinoOn) {
-			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 127, 0);
+			highPassFilterVal = (int) map(relaxRecordData, 0, 1023, 0, 127);
 			lowPassFilterVal = (int) map(focusRecordData, 0, 1023, 127, 0); 
 		}
 		RiriMessage highPassFilterMsg = new RiriMessage(176, 0, 102, highPassFilterVal);
@@ -420,8 +420,8 @@ void startEEGJ() {
 		playing = true;
 		focusRelaxLevel = 0;
 		myStage.score = 0;
-		RiriMessage msg = new RiriMessage(176, 0, 104, 127);
-	    msg.send();
+		//RiriMessage msg = new RiriMessage(176, 0, 104, 127);
+	    //msg.send();
 		setupMusic();
 		startMusic();
 	}
@@ -442,8 +442,8 @@ void stopEEGJ() {
 		grainKnob.rotation(-90);
 		stopMusic();
 		//RiriMessage msg = new RiriMessage(176, 0, 105, 127); 
-		RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
-	    msg.send();
+		//RiriMessage msg = new RiriMessage(176, 0, 104, 0); 
+	    //msg.send();
 	    RiriMessage msg2 = new RiriMessage(176, 0, 106, 0);
 		msg2.send();
 		playing = false;
@@ -496,16 +496,16 @@ void playMusic(int drawDelay) {
 			focusSpeaker2.setSpeakerSize((int) map(level, -100, 100, 0, focusSpeaker2.graphWidth/1.1));
 		//}
 		// Update the Active Hit Zone
-		if (level >= 60) {
+		if (level >= 50) {
 			myStage.setActiveHitzone(1);
 		}
-		else if (level < 60 && level >= 20) {
+		else if (level < 50 && level >= 20) {
 			myStage.setActiveHitzone(2);
 		}
 		else if (level < 20 && level >= -20) {
 			myStage.setActiveHitzone(3);
 		}
-		else if (level < -20 && level > -60) {
+		else if (level < -20 && level > -50) {
 			myStage.setActiveHitzone(4);
 		}
 		else {
@@ -541,7 +541,7 @@ void playMusic(int drawDelay) {
 				}
 				else {
 					phase++;
-					if (abs(focusRelaxLevel) >= 80)
+					if (abs(focusRelaxLevel) >= 60)
 						focusRelaxLevel = 0;
 				}
 			}
@@ -934,13 +934,13 @@ void setMeasureLevelAndGrain() {
 	if (val < 20) {
 		grain = 0;
 	}
-	else if (val >= 20 && val < 50) {
+	else if (val >= 20 && val < 40) {
 		grain = 1;
 	}
-	else if (val >= 50 && val < 80) {
+	else if (val >= 40 && val < 60) {
 		grain = 2;
 	}
-	else if (val >= 80) {
+	else if (val >= 60) {
 		grain = 3;
 	}
 	else {
@@ -1067,7 +1067,7 @@ void calculateFocusRelaxLevel(String input) {
 			}
 		}
 		focusVal = (int) (focusVal / 4);
-		relaxVal = (int) (relaxVal / 3);
+		relaxVal = (int) (relaxVal / 4);
 
 
 		// Set the brain level
@@ -1080,10 +1080,10 @@ void calculateFocusRelaxLevel(String input) {
 		// METHOD 3: Adjust focusRelaxLevel based on "direction" of mental activity
 		// and adjust by the current grain
 		if (newLevel >= 0) {
-			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+			focusRelaxLevel += (focusRelaxLevel >= 0) ? (LEVEL_STEP - grain*2) : LEVEL_STEP;
 		}
 		else if (newLevel <= -1) {
-			focusRelaxLevel -= (focusRelaxLevel < 0) ? (LEVEL_STEP - grain) : LEVEL_STEP;
+			focusRelaxLevel -= (focusRelaxLevel < 0) ? (LEVEL_STEP - grain*2) : LEVEL_STEP;
 		}
 		if (focusRelaxLevel > MAX_FOCUS) {
 			focusRelaxLevel = MAX_FOCUS;
