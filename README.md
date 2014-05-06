@@ -9,7 +9,7 @@ New Media Team Project for team Codename Riri, "Electroencephalogram Jockey," or
 
 "EEGJ: An immersive audio/visual experience. Created using EEG technology to turn the rhythms of your heart and mind into music for the danceﬂoor! EEGJ puts you in the DJ booth, allowing you to create personal beats and visuals using data generated from your brain, heart, and hands."
 
-EEGJ was on exhibit at the 2014 Imagine RIT event at the Rochester Institute of Technology. Brain data gathered from a user through a hacked [MindFlex](http://mindflexgames.com/) EEG headset is used to modulate the parameters of a unique, generative MIDI soundscape. Auxiliary pressure sensors are used to control audio filters as well. All user input is used to affect the visual display, which includes turntables, speakers, graphs, and even a Guitar Hero-esque game to guide users through the experience.
+EEGJ was on display at the 2014 Imagine RIT event at the Rochester Institute of Technology. Brain data gathered from a user through a hacked [MindFlex](http://mindflexgames.com/) EEG headset is used to modulate the parameters of a unique, generative MIDI soundscape. Auxiliary pressure sensors are used to control audio filters as well. All user input is used to affect the visual display, which includes turntables, speakers, graphs, and even a Guitar Hero-esque game to guide users through the experience.
 
 ### Exhibit 
 
@@ -49,6 +49,13 @@ The whole setup was powered by a team member's desktop computer: 3rd generation 
 In addition to running EEGJ, the computer was also running Ableton Live. A set was created with several instrument tracks, each one mapped to an instrument/channel. MIDI data was generated in Processing and sent to Ableton using a [virtual MIDI bus](https://www.ableton.com/en/articles/using-virtual-MIDI-buses-live/). Our set can be found here: [http://bencentra.com/portfolio/eegj/EEGJ_SET.zip](http://bencentra.com/portfolio/eegj/EEGJ_SET.zip)
 
 ### Code 
+
+#### Complete Setup Steps
+
+1. Ensure your virtual MIDI bus is set up and running
+2. Run Ableton Live and open the EEGJ Set
+3. Plug in the MindFlex and pressure sensor Arduinos
+4. Open EEGJ in Processing and click "Run"
 
 #### Setup and Dependencies
 
@@ -114,21 +121,21 @@ Brain level ranges for the music's "grain" (activity level):
 
 ```java
 void setMeasureLevelAndGrain() {
-	   // Get the average focusRelaxLevel
-	   float val = 0;
+	// Get the average focusRelaxLevel
+	float val = 0;
    	for (int i = 0; i < levelHist.size(); i++) {
-   		   val += levelHist.get(i);
-	   }  
+   		val += levelHist.get(i);
+	}  
    	val = val/levelHist.size();
    	// Set level
    	level = (int) val;
    	// Set grain
    	val = abs(val);
    	if (val < 20) {
-   		   grain = 0;
+   		grain = 0;
    	}
    	else if (val >= 20 && val < 40) {
-   		   grain = 1;
+   		grain = 1;
    	}
    	else if (val >= 40 && val < 60) {
    	   	grain = 2;
@@ -137,7 +144,7 @@ void setMeasureLevelAndGrain() {
    	   	grain = 3;
    	}
    	else {
-   	   	grain = 0; // Iunno
+   		grain = 0; // Iunno
    	}
    	grainKnob.rotation((int) map(grain, 0, 3, -90, 90));
 }
@@ -178,6 +185,35 @@ void calculateFocusRelaxLevel(String input) {
 			focusRelaxLevel = MAX_RELAX;
 		}
 ...
+}
+```
+
+#### Adjusting the Soundscape
+
+All of the music used in EEGJ is generated in the program itself using the RiriFramework. The six instrumet tracks are controlled by RiriSequence objects: kick, perc1, perc2, bass, synth1, and synth2. Each instrument's notes are generated  a measure at a time (see the `playMusic()` function). Each instrument has a method that generates the notes, such as `createBassMeasure()`:
+
+```java
+void createBassMeasure() { // Bass
+	// Determine how to play
+	int g = (level >= 0) ? grain : 0;
+	int velocity = (level >= 0) ? 80 + 10*grain : 80 - 10*grain;
+	// Play randomized half-notes
+	if (g == 0 || g == 1) {
+		// Random notes for now
+		for (int i = 0; i < 2; i++) {
+			int p1 = pitch + SCALE[(int) random(0, SCALE.length)] - 24;
+			bass.addNote(p1, 80, beatsToNanos(2));
+		}
+	}
+	// Play a motif (random notes followed by root pitch)
+	else {
+		// Random notes for now
+		for (int i = 0; i < 2; i++) {
+			int p1 = pitch + SCALE[(int) random(0, SCALE.length)] - 24;
+			bass.addNote(p1, 80, beatsToNanos(.75));
+		}
+		bass.addNote(pitch + SCALE[0] - 24, 80, beatsToNanos(2.5));
+	}
 }
 ```
 
