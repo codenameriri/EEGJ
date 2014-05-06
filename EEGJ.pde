@@ -26,6 +26,7 @@ color veryFocusColor = color(155,34,184);
 color otherColor = color(133,0,192);
 
 // MidiBus + instruments
+String MIDI_PORT = "Virtual MIDI Bus";
 MidiBus mb;
 int channel1, channel2, channel3, channel4, channel5, channel6;
 RiriSequence kick, perc1, perc2, bass, synth1, synth2;
@@ -136,7 +137,7 @@ void setup() {
 	playing = false;
 	// MidiBus setup
 	MidiBus.list();
-	mb = new MidiBus(this, -1, "Virtual MIDI Bus");
+	mb = new MidiBus(this, -1, MIDI_PORT);
 	mb.sendTimestamps();
 	channel1 = 0;
 	channel2 = 1;
