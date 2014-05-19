@@ -42,12 +42,15 @@ class RiriRecord{
     xPos = _xPos;
     yPos = _yPos;
     
+    // Set the color for the wave lines, and the background 
     if (_type == true)
       waveColor = RELAX_COLOR;
     else 
       waveColor = FOCUS_COLOR;
     bgColor = BG_COLOR;
 
+    // Set the min/maxData values depending on the data value 
+    // coming in if its from a sensor/generated 
     if( !sensorData ){
       minData = 0;
       maxData = 100;
@@ -58,9 +61,7 @@ class RiriRecord{
       maxData = 1023;
       //println("Sensor Data");  
     }
-    
-    
-    
+
   }//END Record
   
   
@@ -110,23 +111,29 @@ class RiriRecord{
       if(dataValue == 0 ){
         radius += random(1);
       }
+      // Range: 0-25%
       if( dataValue > 0 && dataValue < (maxData*0.25) ){ 
         radius += random(1,4);
       }
+      // Range: 25-50%
       else if( dataValue > (maxData*0.25) && dataValue < (maxData*0.5) ){ 
         radius += random(4,12);
       }
+      // Range: 50-75%
       else if( dataValue > (maxData*0.5) && dataValue < (maxData*0.75) ){ 
         radius += random(12,20);
       }
+      // Range: 75-100%
       else if( dataValue > (maxData*0.75) && dataValue <= maxData){
         radius += random(20,32);
       }
- 
+      
+      // Create points with the new radius and at a diffrent angle     
       float xPt = (radius * 1.45) * cos(angle * n);
       float yPt = radius * sin(angle * n);
       points[n] = new PVector(xPt, yPt);
      }
+  
   }// END setPoints
   
   
